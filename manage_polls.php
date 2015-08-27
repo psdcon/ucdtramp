@@ -2,60 +2,79 @@
 include_once('includes/functions.php');
 $title = 'Polls';
 
-if (isset($_GET['action']) && $loggedin) { // Create poll
+// Create poll
+if (isset($_GET['action']) && $loggedIn) {
     $action = $_GET['action'];
     
     if ($action == 'add') { // Show form to create new poll
-        addheader();
+        addHeader();
         echo '
-        <h1>
-            <a style="color:black;text-decoration:none;" href="http://www.ucdtramp.com/manage_polls.php#cont" title="Back to all Polls">
-                Create Poll
-            </a>
-        </h1>
-
-        <div class="whitebox">
-            <p>
-                Create a new poll with the form below. You don\'t need to fill in all the options, any that are left blank won\'t appear in the poll.
-            </p>
-            <br>
-            <form action="http://www.ucdtramp.com/manage_polls.php" method="GET">
-            <table>
-                <tr>
-                    <td align="right">Poll Question: </td>
-                    <td align="left">
-                        <input type="text" name="question" maxlength="255" size="70" />
-                    </td>
-                </tr>';
+        <h2>
+            Creating Poll
+            <small><small><a href="manage_polls.php" title="Back to all Polls">Poll menu</a></small></small>
+        </h2>
+        <style>
+            tr td:nth-of-type(1) {
+                text-align: right;
+            }
+            /*Desktop*/
+            @media (min-width: 768px) {
+                tr td:nth-of-type(1) {
+                    width: 150px;
+                }
+            }
+        </style>
+        <p>
+            Note: You don\'t need to fill in all the options, any that are left blank won\'t appear in the poll.
+        </p>
+        <form action="manage_polls.php" method="GET">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <td><strong>Poll Question: </strong></td>
+                        <td>
+                            <input class="form-control" type="text" name="question" />
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>';
 
         for ($i = 1; $i <= 12; $i++) {
             echo '
-                <tr>
-                    <td align="right">Option '.$i.':</td>
-                    <td align="left"> <input type="text" name="option'.$i.'" maxlength="255" size="70" /></td>
-                </tr>';
+                    <tr>
+                        <td>Option '.$i.':</td>
+                        <td>
+                            <input class="form-control" type="text" name="option'.$i.'" />
+                        </td>
+                    </tr>';
         }
-
         echo '
-                <tr>
-                    <td align="right">&nbsp;</td>
-                    <td align="left"><input type="submit" name="action" value="Create Poll" /></td>
-                </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td style="text-align:left">
+                            <input class="btn btn-default" type="submit" name="action" value="Create Poll" />
+                            <label class="checkbox-inline"><input type="checkbox" name="showOnForum" checked>Show on forum for next 3 days</label>
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
-            </form>
-        </div>';
+        </form>';
 
     // When the above form is submitted, this runs and the info is added to the database
     } else if ($action == 'Create Poll') { 
-        mysqli_query($db, "INSERT INTO polls (question,created) VALUES('".mysqli_real_escape_string($db, ($_GET['question']))."',".time().")");
+        $showOnForum = (isset($_GET['showOnForum']))? 1: 0; // When set, the checkbox is checked to show the poll on the forum
+        mysqli_query($db, "INSERT INTO polls (question, created, show_on_forum) VALUES('".mysqli_real_escape_string($db, ($_GET['question']))."',".time().", $showOnForum)");
+        $lastId = mysqli_insert_id($db);
 
         for ($i = 1; strlen($_GET['option'.$i]) != 0; $i++) {
             mysqli_query($db, "UPDATE polls 
                 SET option".$i." = '".(mysqli_real_escape_string($db, ($_GET['option'.$i])))."',
                     numofoptions=".$i." 
-                WHERE id=LAST_INSERT_ID()");
+                WHERE id=".$lastId);
         }
-        header("Location:http://www.ucdtramp.com/manage_polls.php?poll=latest#cont");
+        header("Location:manage_polls.php?poll=".$lastId);
     }
 
 // Show/vote on Poll
@@ -67,7 +86,7 @@ if (isset($_GET['action']) && $loggedin) { // Create poll
         if ($poll == 'latest') {
             $currentpoll_query = mysqli_query($db, "SELECT * FROM polls ORDER BY id DESC LIMIT 1");
         } else {
-            $currentpoll_query = mysqli_query($db, "SELECT * FROM polls WHERE id='$poll'");
+            $currentpoll_query = mysqli_query($db, "SELECT * FROM polls WHERE id=$poll LIMIT 1");
         }
         $currentpoll = mysqli_fetch_array($currentpoll_query);
         
@@ -75,20 +94,17 @@ if (isset($_GET['action']) && $loggedin) { // Create poll
         if (isset($_REQUEST['vote'])) {
             // Make sure people only vote once
             $user_ip = encode_ip($_SERVER['REMOTE_ADDR']); // encode users ip for database check
-            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip'");
-            if (mysqli_fetch_array($existing_voters)){
+            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
+            if (mysqli_num_rows($existing_voters) > 0){
                 // If they already voted, redirect to results with a warning message
-                header("Location:http://www.ucdtramp.com/manage_polls.php?poll=$poll&results=show&naughty=person#cont");
+                header("Location:manage_polls.php?poll=$poll&results=show&naughty=person");
             } else {
-                // increase counts
-                $option          = mysqli_real_escape_string($db, $_REQUEST['option']);
-                $new_numofvotes  = $currentpoll['numofvotes'] + 1;
+                // Increase count
+                $option = mysqli_real_escape_string($db, $_REQUEST['option']);
+                $new_numofvotes = $currentpoll['numofvotes'] + 1;
                 $new_optionvotes = $currentpoll['vote'.$option] + 1;
                 // Add increased counts to database
-                mysqli_query($db, "UPDATE polls 
-                    SET vote$option = '$new_optionvotes',
-                    numofvotes = $new_numofvotes
-                    WHERE id = $poll");
+                mysqli_query($db, "UPDATE polls SET vote$option = '$new_optionvotes', numofvotes = $new_numofvotes WHERE id = $poll");
 
                 // Add voter's ipaddress to db so they connot vote on this poll again
                 mysqli_query($db, "INSERT INTO poll_voters (poll, option_picked, ip) VALUES ($poll, $option, '$user_ip') ");
@@ -96,195 +112,228 @@ if (isset($_GET['action']) && $loggedin) { // Create poll
                 // Print error if there's any database problems. This will hault the header() function
                 echo mysqli_error($db);
                 // Otherwise move onto the show results page
-                header("Location:http://www.ucdtramp.com/manage_polls.php?poll=$poll&results=show#cont");
+                header("Location:manage_polls.php?poll=$poll&results=show");
             }
         }
         
         // Display the results of a poll
         else if (isset($_REQUEST['results'])) {
-            addheader();
+            addHeader();
             echo '
-                <h1>
-                    <a style="color:black;text-decoration:none;" href="http://www.ucdtramp.com/manage_polls.php#cont" title="Back to all Polls">
-                        Results
-                    </a>
-                </h1>';
+            <h2>
+                Results
+                <small><small><a href="manage_polls.php" title="Back to all Polls">Poll menu</a></small></small>
+            </h2>';
+
+            // Check to see if the user has already voted on this poll
+            $user_ip = encode_ip($_SERVER['REMOTE_ADDR']); // encode users ip for database check
+            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
+            $tableFooter = '';
+            if (mysqli_num_rows($existing_voters) == 0){
+                // Not voted yet
+                $tableFooter = '<a class="btn btn-primary" href="manage_polls.php?poll='.$currentpoll['id'].'">Cast Vote</a>';
+            }
+            else {
+                // Aleady voted
+                $tableFooter = '<a class="btn btn-default" href="manage_polls">Polls Menu</a>';
+            }
             
             if (isset($_REQUEST['naughty'])) {
                 echo '
-                <p style="color:red;font-size:2em">
-                    Nice try but you\'re only allowed to vote once!
-                </p>
-                <br>';
+                <h4 class="alert alert-danger">
+                    You can only vote once!
+                </h4>';
             }
-?>
-            <style> /* CSS for the animation of the progress-bar width */
-                @-webkit-keyframes progress-bar {
-                   0% { width: 0; }
-                }
-                @-moz-keyframes progress-bar {
-                   0% { width: 0; }
-                }
-                .progress {
-                  height: 21px;
-                  margin-bottom: 21px;
-                  margin-top: 10px;
-                  overflow: hidden;
-                  background-color: #cccccc;
-                  -webkit-border-radius: 7px;
-                     -moz-border-radius: 7px;
-                          border-radius: 7px;
-                  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-                          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-                }
-
-                .progress-bar {
-                  float: left;
-                  width: 0;
-                  height: 100%;
-                  font-size: 13px;
-                  color: #ffffff;
-                  text-align: center;
-                  background-color: #007fff;
-                  -webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-                          box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-                  -webkit-animation: progress-bar 2s;
-                     -moz-animation: progress-bar 2s; 
-                }
-            </style>
-
-<?php 
-            // 12 progress bar colours
-            $bgcolours = array(
-                "#9954bb",
-                "#007fff",
-                "#3fb618",
-                "#ff7518",
-                "#FF0000",
-                "#0CF",
-                "#FC0",
-                "#9954bb",
-                "#007fff",
-                "#3fb618",
-                "#ff7518",
-                "#ff0039"
-            );
-
 
             echo '
-            <div class="whitebox">
-                <h3>'.($currentpoll['question']).' '.$currentpoll['numofvotes'].' votes</h3>';
-   
+            <table class="table" style="text-align:left;">
+                <thead>
+                    <tr>
+                        <th>
+                            <big>'.$currentpoll['question'].'</big>
+                            <small style="float:right;">'.$currentpoll['numofvotes'].' votes</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>';
             for ($i = 1; $i <= $currentpoll['numofoptions']; $i++) {
-                $percentage = round((100 * $currentpoll['vote'.$i] / $currentpoll['numofvotes']), 1);
-                
+                $percentage = ($currentpoll['numofvotes'] == 0)? 0:
+                    round((100 * $currentpoll['vote'.$i] / $currentpoll['numofvotes']), 0);
+
                 echo '
-                <div>
-                    <strong>'.$currentpoll['option'.$i].'</strong>
-                    <em> - '.(($currentpoll['vote'.$i] == 0) ? '0' : $currentpoll['vote'.$i]).' votes ('.$percentage.'%)</em>
-                </div>
-                <div class="progress">
-                    <div class="progress-bar" style="width:'.$percentage.'%;background-color:'.$bgcolours[$i].'"></div>
-                </div>';
+                    <tr>
+                        <td>
+                            <div class="clearfix">'.
+                                $currentpoll['option'.$i].'
+                                <small style="float:right;">'.(($currentpoll['vote'.$i] == 0) ? '0' : $currentpoll['vote'.$i]).' votes ('.$percentage.'%)</small>
+                            </div>
+                            <div class="progress" style="margin-bottom:0;">
+                                <div class="progress-bar" style="width:'.$percentage.'%;"></div>
+                            </div>
+                        </td>
+                    </tr>';
             }
             echo '
-                <br>
-                <a href="http://www.ucdtramp.com/manage_polls.php?poll='.$currentpoll['id'].'#cont">Vote</a> or see
-                <a href="http://www.ucdtramp.com/manage_polls.php#cont">Old Polls</a>
-            </div>';
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>'.
+                            $tableFooter.'    
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>';
         }
         
         // Voting form
         else {
-            addheader();
+            addHeader();
+            // Check to see if the user has already voted on this poll
+            $user_ip = encode_ip($_SERVER['REMOTE_ADDR']); // encode users ip for database check
+            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
+            $tableFooter = '';
+            if (mysqli_num_rows($existing_voters) == 0){
+                // Not voted yet
+                $tableFooter = '<input class="btn btn-primary" type="submit" name="vote" title="You only get one" value="Cast Vote" />';
+            }
+            else {
+                // Aleady voted
+                $tableFooter = '
+                    <input disabled class="btn btn-primary disabled" type="submit" name="vote" title="You\'ve already voted" value="Cast Vote" />
+                    <a class="btn btn-default" href="manage_polls.php?poll='.$currentpoll['id'].'&results=show">View Results</a>';
+            }
+
             echo '
-            <h1>
-                <a style="color:black;text-decoration:none;" href="http://www.ucdtramp.com/manage_polls.php#cont" title="Back to all Polls">
-                    Vote
-                </a>
-            </h1>
-            <form action="http://www.ucdtramp.com/manage_polls.php" method="GET">
-                <div class="whitebox">
-                    <strong>'.$currentpoll['question'].'</strong>
-                    <br><br>
-                    <input type="hidden" name="poll" value="'.$currentpoll['id'].'"/>';
+            <h2>
+                Vote
+                <small><small><a href="manage_polls.php" title="Back to all Polls">Poll menu</a></small></small>
+            </h2>
+            <form action="manage_polls.php" method="GET">
+                <table class="table table-hover" style="text-align:left;">
+                    <thead>
+                        <tr>
+                            <th>
+                                <big>'.$currentpoll['question'].'</big>
+                                <input type="hidden" name="poll" value="'.$currentpoll['id'].'"/>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>';
                 for ($i = 1; $i <= $currentpoll['numofoptions']; $i++) {
                     echo '
-                    <p style="line-height:1.6">
-                        <input type="radio" name="option" value="'.$i.'" id="option'.$i.'"/>
-                        <label for="option'.$i.'">'.$currentpoll['option'.$i].'</label>
-                    </p>';
+                        <tr>
+                            <td>
+                                <input type="radio" name="option" value="'.$i.'" id="option'.$i.'"/>
+                                <label style="font-weight:normal;" for="option'.$i.'">'.$currentpoll['option'.$i].'</label>
+                            </td>
+                        </tr>';
                 }
                 echo '
-                    <br>
-                    <input type="submit" name="vote" title="You only get one" value="Cast Vote" />
-                    <br><br><br>
-                    <a href="http://www.ucdtramp.com/manage_polls.php?poll='.$currentpoll['id'].'&results=show#cont">View Results</a> or see
-                    <a href="http://www.ucdtramp.com/manage_polls.php#cont">Old Polls</a>
-                </div>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>'.
+                                $tableFooter.'    
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
             </form>';
         }
         
     // List all polls   
     } else {
-        addheader();
-        echo '
-        <h1>
-            <a style="color:black;text-decoration:none;" href="http://www.ucdtramp.com/manage_polls.php#cont">
-                Polls
-            </a>
-        </h1>';
+        addHeader();
         $polls = mysqli_query($db, "SELECT * FROM polls ORDER BY id DESC");
-        
-        if (isset($_GET['success'])) { // If an action has been successful, a msg box will be displayed
-            echo '
-            <h3 style="color:green">
-                Poll '.$_GET['success'].' successfully!
-            </h3>';
-        }
-        if ($loggedin) {
-            echo '
-            <h2>
-                <a style="color:black" href="http://www.ucdtramp.com/manage_polls.php?action=add#cont" title="Committee Only">
-                    + New Poll
-                </a>
-            </h2>';
-        }
 
         echo '
-        <table class="admin">
-            <tr class="header">
+        <h2>
+            Polls
+        </h2>';
+        
+        if ($loggedIn) {
+            echo '
+            <h4>
+                <a href="manage_polls.php?action=add" title="Committee Only">
+                    + Create New Poll
+                </a>
+            </h4>';
+        }
+        
+        echo '
+        <style>
+            th {
+                text-align: center;
+            }
+            td:nth-child(1) {
+                width: 10%;
+            }
+            td:nth-child(2) {
+                width: 10%;
+            }
+            td:nth-child(3){
+                width: 12%;
+            }
+            td:nth-child(4){
+                width: 10%;
+            }
+            td:nth-child(5){
+                text-align:left;
+                width: 58%;
+            }
+            /*Mobile*/
+            @media (max-width: 768px) {
+                table  { display: block; padding: 0;}
+                table  td, table  th { display: inline-block; }
+                td:nth-child(1) {
+                    width: 20%;
+                }
+                td:nth-child(2) {
+                    width: 40%;
+                }
+                td:nth-child(3){
+                    width: 20%;
+                }
+                td:nth-child(4){
+                    width: 20%;
+                }
+                td:nth-child(5){
+                    text-align:left;
+                    width: 100%;
+                }
+            }
+        </style>
+        <table class="table table-striped">
+            <tr>
                 <th>ID</th>
-                <th style="width:100px;">Action</th>
+                <th>Action</th>
                 <th>Num Choices</th>
                 <th>Num Votes</th>
-                <th style="text-align:left">Question</th>
-            </tr>';
+                <th style="text-align:left;">Question</th>
+            </tr>
+            <tbody>';
         
         // List all polls with view results/vote buttons
-        $row = 'odd';
         while ($poll = mysqli_fetch_array($polls)) {
-            $row = ($row == 'odd' ? 'even' : 'odd'); // Alternate even and odd rows
             echo'
-            <tr class="'.$row.'" style="text-align:center"> 
-                <td>'.$poll['id'].'</td>
-                <td>
-                    <a href="http://www.ucdtramp.com/manage_polls.php?poll='.$poll['id'].'&results=show#cont" title="View Results"><i class="fa fa-bar-chart-o"></i> View</a>
-                    <br>
-                    <a href="http://www.ucdtramp.com/manage_polls.php?poll='.$poll['id'].'#cont" title="Vote"><i class="fa fa-crosshairs"></i> Vote</a>
-                </td>
-                <td>'.$poll['numofoptions'].'</td>
-                <td>'.$poll['numofvotes'].'</td>
-                <td style="text-align:left">
-                    <a style="text-decoration:none;" href="http://www.ucdtramp.com/manage_polls.php?poll='.$poll['id'].'&results=show#cont" title="View Results">'.
+                <tr> 
+                    <td>'.$poll['id'].'</td>
+                    <td>
+                        <a href="manage_polls.php?poll='.$poll['id'].'&results=show" title="View Results"><i class="fa fa-bar-chart-o"></i> Results</a>
+                        <br>
+                        <a href="manage_polls.php?poll='.$poll['id'].'" title="Vote"><i class="fa fa-crosshairs"></i> Vote</a>
+                    </td>
+                    <td>'.$poll['numofoptions'].'</td>
+                    <td>'.$poll['numofvotes'].'</td>
+                    <td>'.
                         smilify(($poll['question']), 0).'
-                    </a>
-                </td>
-            </tr>';
+                    </td>
+                </tr>';
         }
         echo '
-        </table>';
+            </tbody>
+        </table>';        
     }
 }
-addfooter();
+addFooter();
 ?>

@@ -1,41 +1,56 @@
 <?php
 require_once ('db.php');
 
-// Set $login to true if valid user
+################################################
+#            EMOJIONE CODE
+# include the PHP library (if not autoloaded)
+require('includes/emojione/autoload.php');
+
+$emojione = new Emojione\Client(new Emojione\Ruleset());
+
+// Can't go svg because clicking the svg object doesnt propagate the link
+# default is PNG but you may also use SVG
+$emojione->imageType = 'png';
+# default is ignore ASCII smileys like :) but you can easily turn them on
+$emojione->ascii = true;
+# use sprite instead of individual images
+// $emojione->sprites = true;
+# change the default paths for svg
+$emojione->imagePathSVGSprites = 'images/emoji/emojione/emojione.sprites.svg';
+################################################
+
+$userPosition = '';
+$loggedIn = false;
 if(isset($_COOKIE['user'])){ // checks for users cookie
-	$cookieuser = $_COOKIE['user']; $cookiepass = $_COOKIE['pass']; // Store cookie info
-	$dbuser = mysqli_query($db, "SELECT * FROM committee_users WHERE user = '$cookieuser'")or die(mysqli_error()); 
-		
-	while($info = mysqli_fetch_array($dbuser)){
-		if ($cookiepass == $info['pass']){
-			$loggedin = true;
-			$userpos = $info['position'];				
-		}
-	}
-} // no user or incorrect pass in cookie, set global vars to false so php doesn't give out
-else {
-	$loggedin = false;
-} 
-
-function addheader() {
-	// These variables are used in the header.php file. 
-	// They're given values before addheader function call in all other php files
-	global $title,
-		   $description, 
-		   $pageURL, 
-		   $lasteditu, 
-		   $lasteditt,
-		   $editperm;
-	include('includes/header.php');
+    $cookieuser = $_COOKIE['user']; $cookiepass = $_COOKIE['pass']; // Store cookie info
+    $dbuser = mysqli_query($db, "SELECT * FROM committee_users WHERE user = '$cookieuser'") or die(mysqli_error()); 
+        
+    while($info = mysqli_fetch_array($dbuser)){
+        if ($cookiepass == $info['pass']){
+            $loggedIn = true;
+            $userPosition = $info['position'];               
+        }
+    }
 }
 
-function addfooter() {
-	global $db; // db connection is closed in footer
-	include('includes/footer.php');
+function addHeader() {
+    // These variables are used in the header.php file. 
+    // They're given values before addheader function call in all other php files
+    global $title,
+           $description,
+           $userPosition,
+           $loggedIn;
+
+    $title = ($title == 'UCD Trampoline Club')? $title: 'UCDTC '.$title;
+    include('includes/header.php');
 }
 
-function nicetime($date) // makes nice date on forum posts
-{    
+function addFooter() {
+    global $db; // db connection is closed in footer
+    include('includes/footer.php');
+}
+
+function nicetime($date){ // makes nice date on forum posts    
     $periods         = array("second", "minute", "hour", "day", "week", "month", "year", "decade");
     $lengths         = array("60","60","24","7","4.35","12","10");
     
@@ -47,1065 +62,307 @@ function nicetime($date) // makes nice date on forum posts
         return "Bad date";
     }
    
-    $difference     = $now - $unix_date;
-    $tense         = "ago";
+    $difference = $now - $unix_date;
+    $tense = "ago";
    
     for($j = 0; $difference >= $lengths[$j] && $j < count($lengths)-1; $j++) {
         $difference /= $lengths[$j];
     }
-    
     $difference = round($difference);
 
     if($periods[$j]=='second'){return "less than a min ago";}
-	
-    if($difference != 1) {
-        $periods[$j].= "s";
-    }
+    if($difference != 1) {$periods[$j].= "s";}
     return "$difference $periods[$j] {$tense}";
 }
 
-// Both ip functions taken from old site for backwards compatibility
+// Both ip functions taken from old site for backwards compatability
 function encode_ip($dotquad_ip){
-	$ip_sep = explode('.', $dotquad_ip);
-	return sprintf('%02x%02x%02x%02x', $ip_sep[0], $ip_sep[1], $ip_sep[2], $ip_sep[3]);
+    $ip_sep = explode('.', $dotquad_ip);
+    return sprintf('%02x%02x%02x%02x', $ip_sep[0], $ip_sep[1], $ip_sep[2], $ip_sep[3]);
 }
 function decode_ip($int_ip){
-	if($int_ip==NULL){
-		return '0.0.0.0' ;
-	}
-	$hexipbang = explode('.', chunk_split($int_ip, 2, '.'));
-	return hexdec($hexipbang[0]). '.' . hexdec($hexipbang[1]) . '.' . hexdec($hexipbang[2]) . '.' . hexdec($hexipbang[3]);
+    if($int_ip==NULL){
+        return '0.0.0.0' ;
+    }
+    $hexipbang = explode('.', chunk_split($int_ip, 2, '.'));
+    return hexdec($hexipbang[0]). '.'.hexdec($hexipbang[1]).'.'.hexdec($hexipbang[2]).'.'.hexdec($hexipbang[3]);
+}
+
+// Used in forum.php and forum.ajax.php
+function posts2AssocArray($newPostResult){
+    $postsArray = [];
+    // $usersForumId = $_COOKIE['usersForumId'];
+    while ($post = mysqli_fetch_array($newPostResult)) {
+        $postsArray[] = formatPost($post);
+    }
+
+    return $postsArray;
+}
+
+function formatPost($post) {
+    global $db, $userPosition, $forumId, $usersForumId;
+
+    $postId = $post['id'];
+    // Times
+    $htmlDatetime = date('c', $post['post_time']);
+    $readableTime = date('D, d M Y H:i:s', $post['post_time']);
+    $niceTime = nicetime($post['post_time']);
+    // User and message
+    $forumUser = html_entity_decode($post['sender']);
+    $forumUser = smilify($forumUser, $forumUser);
+    $forumMessage = URL2link(smilify(nl2br(html_entity_decode($post['message'])), $forumUser));
+    // ip address, delete, edit button
+    $headerActions = ($userPosition == 'Webmaster')? 
+        decode_ip($post['ipaddress']).' 
+        <a class="forum-post-delete" style="color:black;" title="Delete post" href="forum/delete/'.$postId.'">
+            <i class="fa fa-trash-o"></i> <span class="sr-only">Delete</span>
+        </a>' : '';
+    if ($post['users_forum_id'] == $usersForumId || $userPosition == 'Webmaster')
+        $headerActions .= '
+            <a class="forum-post-edit" style="color:black;" title="Edit post" href="forum/edit/'.$postId.'">
+                <i class="fa fa-pencil"></i> <span class="sr-only">Edit</span>
+            </a>';
+    // Likes
+    $likeCount = mysqli_query($db, "SELECT count(1) c FROM forum_plusone WHERE message = $postId LIMIT 1");
+    $likeCount = mysqli_fetch_array($likeCount)['c'];
+    if (mysqli_num_rows(mysqli_query($db, "SELECT 1 FROM forum_plusone WHERE message = $postId AND cookie = '$usersForumId' LIMIT 1"))){
+        $likedClass = 'liked';
+        $likeTitle = 'Approved';
+    }
+    else {
+        $likedClass = 'not-liked';
+        $likeTitle = 'Approve Post';
+    }
+
+    return array(
+        'id' => $post['id'],
+        'parentPostId' => $post['parent_id'],
+        'htmlDatetime' => $htmlDatetime,
+        'readableTime' => $readableTime,
+        'niceTime' => $niceTime,
+        'forumUser' => $forumUser,
+        'forumMessage' => $forumMessage,
+        'headerActions' => $headerActions,
+        'likeCount' => $likeCount,
+        'likedClass' => $likedClass,
+        'likeTitle' => $likeTitle
+    );
+}
+
+function post2HTML($post){
+    return '
+        <div class="post-header"> <!--top bar with name, time and other details. Has bottom border-->
+            <strong class="post-header-name">'. $post['forumUser'] .'</strong>
+            <small class="post-header-time">
+                <time datetime="'. $post['htmlDatetime'] .'" title="'. $post['readableTime'] .'">
+                    '. $post['niceTime'] .'
+                </time>
+            </small>
+
+            <span class="post-header-actions"> 
+                '. $post['headerActions'] .'
+            </span>
+        </div>
+        <div class="post-message clearfix">
+            '. $post['forumMessage'] .'
+
+            <!-- Like button -->
+            <button type="button" class="btn post-like-btn" title="'. $post['likeTitle'] .'" data-action="likeButton" data-postid="'. $post['id'] .'">
+                <img class="post-like-img '. $post['likedClass'] .'" src="images/pages/forum/like.svg" alt="Like">
+                <span class="post-like-count">
+                    '. $post['likeCount'] .'
+                </span>
+            </button>
+        </div>';
+}
+
+function seconds_to_time($secs){
+    $dt = new DateTime('@' . $secs, new DateTimeZone('UTC'));
+    $time = array('days'    => $dt->format('z'),
+                 'hours'   => $dt->format('G'),
+                 'minutes' => $dt->format('i'),
+                 'seconds' => $dt->format('s'));
+    $str = ($time['days'] == 0)? '': $time['days'].'d ';
+    $str .= ($time['hours'] == 0)? '': $time['hours'].'hr';
+    $str .= ($time['hours'] > 1)? 's ': '';
+    $str .= $time['minutes'].'min ';
+    return $str;
 }
 
 // Turn all recognised URLs into links/image/youtube embed
 // Uses regular expressions found on stackoverflow. User regexr.com to figure them out
-function URL_to_link($text){
-	// Replace youtube.com and youtu.be links with video in a scaling div with class="forum-vid-container"
-	// if(!preg_match('! youtube !i',$text)){ // ignore a space separated word youtube
-		$youtube_regex='(https?\:\/\/)?(www\.youtube\.com\/watch\?v=|youtu\.be)\/?(\S{11})';
-		$youtube_embed='<div class="forum-vid-container"><iframe src="http://www.youtube.com/embed/$3" allowfullscreen></iframe></div>';
-		$text = preg_replace('#'.$youtube_regex.'#i',$youtube_embed, $text);
-	// }
-	
-	// Show img when a jpg, gif or png are posted
-	$img_regex='((https?:)([/.\w-])*\.(jpg|gif|png))';
-	$img_replace='<a href="$1" target="_blank"><img class="forum_photo" src="$1"></a>';
-	$text = preg_replace('#'.$img_regex.'#i',$img_replace, $text);	
-	
-	// Make link clickable
-	$URL_reg='((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)';
-	if(!preg_match('!src="'.$URL_reg.'!i',$text)) //if a url is not already part of a src (preceded by src=") then make it an anchor
-		$text = preg_replace('!'.$URL_reg.'!i', '<a target="_blank" href="$1">$1</a>', $text);
-	
-	return $text;
+function URL2link($text){
+    // Replace youtube.com and youtu.be links with video in a scaling div with class="forum-vid-container"
+    $youtube_regex='(https?\:\/\/)?(www\.youtube\.com/watch\?v=|youtu\.?be)/?(\S{11})';
+    $youtube_embed='<div class="embed-bounding-box"><div class="embed-responsive"><iframe class="embed-responsive-item" src="https://www.youtube.com/embed/$3" allowfullscreen></iframe></div></div>';
+    $text = preg_replace('#'.$youtube_regex.'#i',$youtube_embed, $text);
+    
+    // Show img when a jpg, gif or png are posted
+    // $img_regex='((https?:)([/|.|\w|])*\.(jpg|gif|png|svg))';
+    $img_regex='((https?:)([/.\w-])*\.(jpg|gif|png|svg))';
+    $img_replace='<a class="post-image" href="$1" target="_blank"><img src="$1"></a>';
+    $text = preg_replace('#'.$img_regex.'#i',$img_replace, $text);  
+    
+    // If url wasnt already recognised as a youtube link or an image, make it a clickable link        
+    $URL_reg='((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)';
+    if(!preg_match('!src="'.$URL_reg.'!i',$text)) //if a url is not already part of a src (preceded by src=") then make it an anchor
+        $text = preg_replace('!'.$URL_reg.'!i', '<a target="_blank" href="$1">$1</a>', $text);
+    
+    return $text;
 }
 
-// Change smilies to images
-function smilify($text,$poster) {
+// Other faces/gifs (not emoji)
+$ucdtcSmilies = array(
+    // Order: smiley shortname, image path, alt/description
+    array(':osmile:', 'normal-smilies/osmile.gif', 'smile'),
+    array(':obiggrin:', 'normal-smilies/obiggrin.gif', 'biggrin'),
+    array(':olol:', 'normal-smilies/olol.gif', 'lol'),
+    array(':omrgreen:', 'normal-smilies/omrgreen.gif', 'mrgreen'),
+    array(':owink:', 'normal-smilies/owink.gif', 'wink'),
+    array(':ocool:', 'normal-smilies/ocool.gif', 'cool'),
+    array(':orazz_alt:', 'normal-smilies/orazz_alt.gif', 'razzle dazzle alt'),
+    array(':orazz_old:', 'normal-smilies/orazz_old.gif', 'razzle dazzle old'),
+    array(':orazz:', 'normal-smilies/orazz.gif', 'razzle dazzle'),
+    array(':oeek:', 'normal-smilies/oeek.gif', 'eek'),
+    array(':orolleyes:', 'normal-smilies/orolleyes.gif', 'rolleyes'),
+    array(':oredface:', 'normal-smilies/oredface.gif', 'redface'),
+    array(':osurprised:', 'normal-smilies/osurprised.gif', 'surprised'),
+    array(':oneutral:', 'normal-smilies/oneutral.gif', 'neutral'),
+    array(':oconfused:', 'normal-smilies/oconfused.gif', 'confused'),
+    array(':ofrown:', 'normal-smilies/ofrown.gif', 'frown'),
+    array(':osad:', 'normal-smilies/osad.gif', 'sad'),
+    array(':ocry:', 'normal-smilies/ocry.gif', 'cry'),
+    array(':omad:', 'normal-smilies/omad.gif', 'mad'),
+    array(':oevil:', 'normal-smilies/oevil.gif', 'evil'),
+    array(':otwisted:', 'normal-smilies/otwisted.gif', 'absolutely bleedin twisted'),
+    array(':oflamed:', 'normal-smilies/flamed.gif', 'a boy who\'s sad because he has red hair'),
+    array(':ocamera:', 'normal-smilies/ocamera.gif', 'camera'),
+    array(':oarrow:', 'normal-smilies/oarrow.gif', 'arrow'),
+    array(':oquestion:', 'normal-smilies/oquestion.gif', 'question'),
+    array(':oexclaim:', 'normal-smilies/oexclaim.gif', 'exclaim'),
+    array(':oidea:', 'normal-smilies/oidea.gif', 'idea'),
+    array(':tramp:', 'normal-smilies/tramp.gif', 'The best smiley ever'),
+    // Purples
+    array(':psmile:', 'normal-smilies/psmile.gif', 'Purple smile'),
+    array(':pbiggrin:', 'normal-smilies/pbiggrin.gif', 'Purple biggrin'),
+    array(':prazz:', 'normal-smilies/prazz.gif', 'Purple razz'),
+    array(':pevil:', 'normal-smilies/pevil.gif', 'Purple evil'),
+    array(':pneutral:', 'normal-smilies/pneutral.gif', 'Purple neutral'),
+    array(':peh:', 'normal-smilies/peh.gif', 'Purple eh'),
+    array(':pconfused:', 'normal-smilies/pconfused.gif', 'Purple confused'),
+    array(':psad:', 'normal-smilies/psad.gif', 'Purple sad'),
+    array(':psurprised:', 'normal-smilies/psurprised.gif', 'Purple surprised'),
+    array(':pwince:', 'normal-smilies/pmad.gif', 'Purple mad'),
+    array(':pheart:', 'normal-smilies/pheart.gif', 'Purple heart'),
+    array(':pstar:', 'normal-smilies/pstar.gif', 'Purple star'),
+    array(':ptramp:', 'normal-smilies/ptramp.gif', 'The best smiley ever in purple'),
+    // Msc
+    array(':flappers:', 'normal-smilies/oflappers.jpg', 'Flappers'),
+    array(':best:', 'normal-smilies/me.jpg', 'Me'),
+    array(':bosco:', 'normal-smilies/bosco.jpg', 'Bosco'),
+    array(':ofrog:', 'normal-smilies/ofrog.gif', 'Ofrog'),
+    array(':ofox:', 'normal-smilies/ofox.gif', 'Ofox'),
+    array(':bdaycake:', 'normal-smilies/ocake.gif', 'Cake'),
+    array(':tim:', 'normal-smilies/tim.jpg', 'Tim'),
+    array(':hearttim:', 'normal-smilies/hearttim.png', 'Hearttim'),
+    array(':whydontyouloveusvincent:', 'normal-smilies/whydontyouloveusvincent.jpg', 'Why dont you love us vincent'),
+);
+$ucdtcSmiliesHalloween = array(
+    // Halloween smilies
+    array(':bat.:', 'holloween-smilies/bat.gif', 'Bat'),
+    array(':cat.:', 'holloween-smilies/cat.gif', 'Cat'),
+    array(':demon.:', 'holloween-smilies/demon.gif', 'Demon'),
+    array(':ghost.:', 'holloween-smilies/ghost.gif', 'Ghost'),
+    array(':monster.:', 'holloween-smilies/monster.gif', 'Monster'),
+    array(':monsterII.:', 'holloween-smilies/monsterII.gif', 'MonsterII'),
+    array(':mummy.:', 'holloween-smilies/mummy.gif', 'Mummy'),
+    array(':pumpkin.:', 'holloween-smilies/pumpkin.gif', 'Pumpkin'),
+    array(':skull.:', 'holloween-smilies/skull.gif', 'Skull'),
+);
+$ucdtcSmiliesXmas = array(
+    // Xmas smilies
+    array(':angel.:', 'xmas-smilies/angel.gif', 'Angel'),
+    array(':ball.:', 'xmas-smilies/ball.gif', 'Ball'),
+    array(':biggrin.:', 'xmas-smilies/biggrin.gif', 'Big grin'),
+    array(':confused.:', 'xmas-smilies/confused.gif', 'Confused'),
+    array(':cool.:', 'xmas-smilies/cool.gif', 'Cool'),
+    array(':cry.:', 'xmas-smilies/cry.gif', 'Cry'),
+    array(':eek.:', 'xmas-smilies/eek.gif', 'Eek'),
+    array(':evil.:', 'xmas-smilies/evil.gif', 'Evil'),
+    array(':exclaim.:', 'xmas-smilies/exclaim.gif', 'Exclaim'),
+    array(':frown.:', 'xmas-smilies/frown.gif', 'Frown'),
+    array(':idea.:', 'xmas-smilies/idea.gif', 'Idea'),
+    array(':lol.:', 'xmas-smilies/lol.gif', 'Lol'),
+    array(':mad.:', 'xmas-smilies/mad.gif', 'Mad'),
+    array(':mrgreen.:', 'xmas-smilies/mrgreen.gif', 'Mrgreen'),
+    array(':neutral.:', 'xmas-smilies/neutral.gif', 'Neutral'),
+    array(':question.:', 'xmas-smilies/question.gif', 'Question'),
+    array(':raindeer.:', 'xmas-smilies/raindeer.gif', 'Raindeer'),
+    array(':razz.:', 'xmas-smilies/razz.gif', 'Razz'),
+    array(':redface.:', 'xmas-smilies/redface.gif', 'Redface'),
+    array(':rolleyes.:', 'xmas-smilies/rolleyes.gif', 'Rolleyes'),
+    array(':rudolph.:', 'xmas-smilies/rudolph.gif', 'Rudolph'),
+    array(':sad.:', 'xmas-smilies/sad.gif', 'Sad'),
+    array(':santy.:', 'xmas-smilies/santy.gif', 'Santy'),
+    array(':smile.:', 'xmas-smilies/smile.gif', 'Smile'),
+    array(':snowflake.:', 'xmas-smilies/snowflake.gif', 'Snowflake'),
+    array(':snowman.:', 'xmas-smilies/snowman.gif', 'Snowman'),
+    array(':surprised.:', 'xmas-smilies/surprised.gif', 'Surprised'),
+    array(':tramp.:', 'xmas-smilies/tramp.gif', 'Tramp'),
+    array(':tree.:', 'xmas-smilies/tree.gif', 'Tree'),
+    array(':twisted.:', 'xmas-smilies/twisted.gif', 'Twisted'),
+    array(':wink.:', 'xmas-smilies/wink.gif', 'Wink'),
+    array(':2muchpunch.:', 'xmas-smilies/2muchpunch.gif', 'A bit too much punch'),
+);
 
-	// Formatting codes
-    $text = preg_replace('/:red:/i', '<span style="color:#FF0000">', ' ' . $text . ' ');
-    $text = preg_replace('/:blue:/i', '<span style="color:#0000FF">', ' ' . $text . ' ');
-    $text = preg_replace('/:green:/i', '<span style="color:#32CD32">', ' ' . $text . ' ');
-    $text = preg_replace('/:pink:/i', '<span style="color:#FF1493">', ' ' . $text . ' ');
-    $text = preg_replace('/:purple:/i', '<span style="color:#C71585">', ' ' . $text . ' ');
-    $text = preg_replace('/:orange:/i', '<span style="color:#FF4500">', ' ' . $text . ' ');
-    $text = preg_replace('/:gray:/i', '<span style="color:#808080">', ' ' . $text . ' ');
-    $text = preg_replace('/:silver:/i', '<span style="color:#COCOCO">', ' ' . $text . ' ');
-    $text = preg_replace('/:thesecretcodecolour:/i', '<span style="color:rgba(255,255,255,.35)">', ' ' . $text . ' ');
-    $text = preg_replace('/:endcolour:/i', '</span>', ' ' . $text . ' ');
-    $text = preg_replace('/:endc:/i', '</span>', ' ' . $text . ' ');
-	
-	$text = preg_replace('/:bold:/i', '<strong>', ' ' . $text . ' ');
-	$text = preg_replace('/:endb:/i', '</strong>', ' ' . $text . ' ');
-	
-	$text = preg_replace('/:large:/i', '<span style="font-size:1.5em;">', ' ' . $text . ' ');
-	$text = preg_replace('/:endl:/i', '</span>', ' ' . $text . ' ');
-		
-	$text = preg_replace('/:underline:/i', '<u>', ' ' . $text . ' ');
-	$text = preg_replace('/:endul:/i', '</u>', ' ' . $text . ' ');
-	
-	// Random site-wide replacements	
-	$text = preg_replace('/Rudiger/i', 'L\'eamo', ' ' . $text . ' ');
-	$text = preg_replace('/rudiger/i', 'L\'eamo', ' ' . $text . ' ');
-	
-	$text = preg_replace('/Tomas/i', 'Smee', ' ' . $text . ' ');
-	$text = preg_replace('/tomas/i', 'Smee', ' ' . $text . ' ');
-	$text = preg_replace('/T.o.m.a.s./i', 'Smee', ' ' . $text . ' ');
-	$text = preg_replace('/T:O:m:a:s/i', 'Smee', ' ' . $text . ' ');
-	$text = preg_replace('/T.omas/i', 'Smee', ' ' . $text . ' ');
-	
-	$text = preg_replace('/Deirdre/i', 'BJ', ' ' . $text . ' ');
-	$text = preg_replace('/D eirdre/i', 'BJ', ' ' . $text . ' ');
-	$text = preg_replace('/D.eirdre/i', 'BJ', ' ' . $text . ' ');
-	$text = preg_replace('/deirdre/i', 'BJ', ' ' . $text . ' ');
-	
-	$text = preg_replace('/Cormac H/i', 'Norman', ' ' . $text . ' ');
-	
-	// Forum replacements, not site-wide	
-	if($poster == 'Sinead'){$text = preg_replace('/sinead/i', 'Flaps', ' ' . $text . ' ');}
-	
-	if($poster == 'Jordan'){$text = preg_replace('/Jordan/i', 'Obama', ' ' . $text . ' ');}
-	if($poster == 'J o r d a n'){$text = preg_replace('/J o r d a n/i', 'Obama', ' ' . $text . ' ');}
-	if($poster == 'J_o_r_d_a_n'){$text = preg_replace('/J_o_r_d_a_n/i', 'Obama', ' ' . $text . ' ');}
-	
-	
-	// Smily face image replacements
-	
-	// Other faces/gifs (not emoji). Each time a page is loaded the code below makes an array of the images that are 
-	// in the images/smilies folder and creates a code based on the image name. i.e. example.png's code is :example: 
-	
-	$other_smilies = array( 
-		array( 1, ':)', 'emoji/blush.png', 'emoji'),
-		array( 2, ':D', 'emoji/grinning.png', 'emoji'),
-		array( 3, ':p', 'emoji/stuck_out_tongue.png', 'emoji'),
-		array( 4, ':P', 'emoji/stuck_out_tongue.png', 'emoji'),
-		array( 5, ';)', 'emoji/wink.png', 'emoji'),
-		array( 6, ':ocake:', 'ocake.gif', 'Cake'),
-		array( 7, ':oquestion:', 'oquestion.gif', 'Oquestion'),
-		array( 8, ':oredface:', 'oredface.gif', 'Oredface'),
-		array( 9, ':ofox:', 'ofox.gif', 'Ofox'),
-		array( 10, ':orolleyes:', 'orolleyes.gif', 'Orolleyes'),
-		array( 11, ':omrgreen:', 'omrgreen.gif', 'Omrgreen'),
-		array( 12, ':whydontyouloveusvincent:', 'whydontyouloveusvincent.jpg', 'Whydontyouloveusvincent'),
-		array( 13, ':flamed:', 'flamed.gif', 'Flamed'),
-		array( 14, ':psurprised:', 'psurprised.gif', 'Psurprised'),
-		array( 15, ':orazz_alt:', 'orazz_alt.gif', 'Orazz_alt'),
-		array( 16, ':pevil:', 'pevil.gif', 'Pevil'),
-		array( 17, ':psad:', 'psad.gif', 'Psad'),
-		array( 18, ':oidea:', 'oidea.gif', 'Oidea'),
-		array( 19, ':ocool:', 'ocool.gif', 'Ocool'),
-		array( 20, ':oneutral:', 'oneutral.gif', 'Oneutral'),
-		array( 23, ':ptramp:', 'ptramp.gif', 'Ptramp'),
-		array( 24, ':tim:', 'tim.jpg', 'Tim'),
-		array( 25, ':oconfused:', 'oconfused.gif', 'Oconfused'),
-		array( 26, ':ofrown:', 'ofrown.gif', 'Ofrown'),
-		array( 27, ':omad:', 'omad.gif', 'Omad'),
-		array( 28, ':peh:', 'peh.gif', 'Peh'),
-		array( 29, ':pheart:', 'pheart.gif', 'Pheart'),
-		array( 30, ':olol:', 'olol.gif', 'Olol'),
-		array( 31, ':oflappers:', 'oflappers.jpg', 'Oflappers'),
-		array( 32, ':pstar:', 'pstar.gif', 'Pstar'),
-		array( 33, ':osmile:', 'osmile.gif', 'Osmile'),
-		array( 34, ':hearttim:', 'hearttim.png', 'Hearttim'),
-		array( 35, ':orazz_old:', 'orazz_old.gif', 'Orazz_old'),
-		array( 36, ':prazz:', 'prazz.gif', 'Prazz'),
-		array( 37, ':ocry:', 'ocry.gif', 'Ocry'),
-		array( 38, ':oeek:', 'oeek.gif', 'Oeek'),
-		array( 39, ':pneutral:', 'pneutral.gif', 'Pneutral'),
-		array( 40, ':tramp:', 'tramp.gif', 'Tramp'),
-		array( 41, ':oarrow:', 'oarrow.gif', 'Oarrow'),
-		array( 42, ':osurprised:', 'osurprised.gif', 'Osurprised'),
-		array( 43, ':pmad:', 'pmad.gif', 'Pmad'),
-		array( 44, ':pconfused:', 'pconfused.gif', 'Pconfused'),
-		array( 45, ':oexclaim:', 'oexclaim.gif', 'Oexclaim'),
-		array( 46, ':oevil:', 'oevil.gif', 'Oevil'),
-		array( 47, ':psmile:', 'psmile.gif', 'Psmile'),
-		array( 48, ':owink:', 'owink.gif', 'Owink'),
-		array( 49, ':osad:', 'osad.gif', 'Osad'),
-		array( 50, ':pbiggrin:', 'pbiggrin.gif', 'Pbiggrin'),
-		array( 51, ':ocamera:', 'ocamera.gif', 'Ocamera'),
-		array( 52, ':otwisted:', 'otwisted.gif', 'Otwisted'),
-		array( 53, ':me:', 'me.jpg', 'Me'),
-		array( 54, ':bosco:', 'bosco.jpg', 'Bosco'),
-		array( 55, ':orazz:', 'orazz.gif', 'Orazz'),
-		array( 56, ':obiggrin:', 'obiggrin.gif', 'Obiggrin'),
-		array( 57, ':ofrog:', 'ofrog.gif', 'Ofrog'),
-		array( 58, ':(', 'emoji/worried.png', 'emoji')
-		);
-	
-	for ($i = 0; $i < count($other_smilies); $i++)
-		{
-			$original[] = "/(?<=.\W|\W.|^\W)" . preg_quote($other_smilies[$i][1], "/") . "(?=.\W|\W.|\W$)/i";
-			$replacement[] = '<img src="http://www.ucdtramp.com/images/smilies/' . $other_smilies[$i][2] . '" alt="' . $other_smilies[$i][3] . '" style="height:1.2;" />';
-		}
-	$text = preg_replace($original, $replacement, ' ' . $text . ' ');
-		
-	
-	// Emoji smileys. Please do not edit unless apple adds new ones.
-	$emoji = array(
-		array( 1, ':+1:', 'emoji/+1.png', '+1'),
-		array( 2, ':-1:', 'emoji/-1.png', '-1'),
-		array( 3, ':100:', 'emoji/100.png', '100'),
-		array( 4, ':1234:', 'emoji/1234.png', '1234'),
-		array( 5, ':8ball:', 'emoji/8ball.png', '8ball'),
-		array( 6, ':a:', 'emoji/a.png', 'A'),
-		array( 7, ':ab:', 'emoji/ab.png', 'Ab'),
-		array( 8, ':abc:', 'emoji/abc.png', 'Abc'),
-		array( 9, ':abcd:', 'emoji/abcd.png', 'Abcd'),
-		array( 10, ':accept:', 'emoji/accept.png', 'Accept'),
-		array( 11, ':aerial_tramway:', 'emoji/aerial_tramway.png', 'Aerial_tramway'),
-		array( 12, ':airplane:', 'emoji/airplane.png', 'Airplane'),
-		array( 13, ':alarm_clock:', 'emoji/alarm_clock.png', 'Alarm_clock'),
-		array( 14, ':alien:', 'emoji/alien.png', 'Alien'),
-		array( 15, ':ambulance:', 'emoji/ambulance.png', 'Ambulance'),
-		array( 16, ':anchor:', 'emoji/anchor.png', 'Anchor'),
-		array( 17, ':angel:', 'emoji/angel.png', 'Angel'),
-		array( 18, ':anger:', 'emoji/anger.png', 'Anger'),
-		array( 19, ':angry:', 'emoji/angry.png', 'Angry'),
-		array( 20, ':anguished:', 'emoji/anguished.png', 'Anguished'),
-		array( 21, ':ant:', 'emoji/ant.png', 'Ant'),
-		array( 22, ':apple:', 'emoji/apple.png', 'Apple'),
-		array( 23, ':aquarius:', 'emoji/aquarius.png', 'Aquarius'),
-		array( 24, ':aries:', 'emoji/aries.png', 'Aries'),
-		array( 25, ':arrows_clockwise:', 'emoji/arrows_clockwise.png', 'Arrows_clockwise'),
-		array( 26, ':arrows_counterclockwise:', 'emoji/arrows_counterclockwise.png', 'Arrows_counterclockwise'),
-		array( 27, ':arrow_backward:', 'emoji/arrow_backward.png', 'Arrow_backward'),
-		array( 28, ':arrow_double_down:', 'emoji/arrow_double_down.png', 'Arrow_double_down'),
-		array( 29, ':arrow_double_up:', 'emoji/arrow_double_up.png', 'Arrow_double_up'),
-		array( 30, ':arrow_down:', 'emoji/arrow_down.png', 'Arrow_down'),
-		array( 31, ':arrow_down_small:', 'emoji/arrow_down_small.png', 'Arrow_down_small'),
-		array( 32, ':arrow_forward:', 'emoji/arrow_forward.png', 'Arrow_forward'),
-		array( 33, ':arrow_heading_down:', 'emoji/arrow_heading_down.png', 'Arrow_heading_down'),
-		array( 34, ':arrow_heading_up:', 'emoji/arrow_heading_up.png', 'Arrow_heading_up'),
-		array( 35, ':arrow_left:', 'emoji/arrow_left.png', 'Arrow_left'),
-		array( 36, ':arrow_lower_left:', 'emoji/arrow_lower_left.png', 'Arrow_lower_left'),
-		array( 37, ':arrow_lower_right:', 'emoji/arrow_lower_right.png', 'Arrow_lower_right'),
-		array( 38, ':arrow_right:', 'emoji/arrow_right.png', 'Arrow_right'),
-		array( 39, ':arrow_right_hook:', 'emoji/arrow_right_hook.png', 'Arrow_right_hook'),
-		array( 40, ':arrow_up:', 'emoji/arrow_up.png', 'Arrow_up'),
-		array( 41, ':arrow_upper_left:', 'emoji/arrow_upper_left.png', 'Arrow_upper_left'),
-		array( 42, ':arrow_upper_right:', 'emoji/arrow_upper_right.png', 'Arrow_upper_right'),
-		array( 43, ':arrow_up_down:', 'emoji/arrow_up_down.png', 'Arrow_up_down'),
-		array( 44, ':arrow_up_small:', 'emoji/arrow_up_small.png', 'Arrow_up_small'),
-		array( 45, ':art:', 'emoji/art.png', 'Art'),
-		array( 46, ':articulated_lorry:', 'emoji/articulated_lorry.png', 'Articulated_lorry'),
-		array( 47, ':astonished:', 'emoji/astonished.png', 'Astonished'),
-		array( 48, ':atm:', 'emoji/atm.png', 'Atm'),
-		array( 49, ':b:', 'emoji/b.png', 'B'),
-		array( 50, ':baby:', 'emoji/baby.png', 'Baby'),
-		array( 51, ':baby_bottle:', 'emoji/baby_bottle.png', 'Baby_bottle'),
-		array( 52, ':baby_chick:', 'emoji/baby_chick.png', 'Baby_chick'),
-		array( 53, ':baby_symbol:', 'emoji/baby_symbol.png', 'Baby_symbol'),
-		array( 54, ':baggage_claim:', 'emoji/baggage_claim.png', 'Baggage_claim'),
-		array( 55, ':balloon:', 'emoji/balloon.png', 'Balloon'),
-		array( 56, ':ballot_box_with_check:', 'emoji/ballot_box_with_check.png', 'Ballot_box_with_check'),
-		array( 57, ':bamboo:', 'emoji/bamboo.png', 'Bamboo'),
-		array( 58, ':banana:', 'emoji/banana.png', 'Banana'),
-		array( 59, ':bangbang:', 'emoji/bangbang.png', 'Bangbang'),
-		array( 60, ':bank:', 'emoji/bank.png', 'Bank'),
-		array( 61, ':barber:', 'emoji/barber.png', 'Barber'),
-		array( 62, ':bar_chart:', 'emoji/bar_chart.png', 'Bar_chart'),
-		array( 63, ':baseball:', 'emoji/baseball.png', 'Baseball'),
-		array( 64, ':basketball:', 'emoji/basketball.png', 'Basketball'),
-		array( 65, ':bath:', 'emoji/bath.png', 'Bath'),
-		array( 66, ':bathtub:', 'emoji/bathtub.png', 'Bathtub'),
-		array( 67, ':battery:', 'emoji/battery.png', 'Battery'),
-		array( 68, ':bear:', 'emoji/bear.png', 'Bear'),
-		array( 69, ':bee:', 'emoji/bee.png', 'Bee'),
-		array( 70, ':beer:', 'emoji/beer.png', 'Beer'),
-		array( 71, ':beers:', 'emoji/beers.png', 'Beers'),
-		array( 72, ':beetle:', 'emoji/beetle.png', 'Beetle'),
-		array( 73, ':beginner:', 'emoji/beginner.png', 'Beginner'),
-		array( 74, ':bell:', 'emoji/bell.png', 'Bell'),
-		array( 75, ':bento:', 'emoji/bento.png', 'Bento'),
-		array( 76, ':bicyclist:', 'emoji/bicyclist.png', 'Bicyclist'),
-		array( 77, ':bike:', 'emoji/bike.png', 'Bike'),
-		array( 78, ':bikini:', 'emoji/bikini.png', 'Bikini'),
-		array( 79, ':bird:', 'emoji/bird.png', 'Bird'),
-		array( 80, ':birthday:', 'emoji/birthday.png', 'Birthday'),
-		array( 81, ':black_circle:', 'emoji/black_circle.png', 'Black_circle'),
-		array( 82, ':black_joker:', 'emoji/black_joker.png', 'Black_joker'),
-		array( 83, ':black_nib:', 'emoji/black_nib.png', 'Black_nib'),
-		array( 84, ':black_square:', 'emoji/black_square.png', 'Black_square'),
-		array( 85, ':black_square_button:', 'emoji/black_square_button.png', 'Black_square_button'),
-		array( 86, ':blossom:', 'emoji/blossom.png', 'Blossom'),
-		array( 87, ':blowfish:', 'emoji/blowfish.png', 'Blowfish'),
-		array( 88, ':blue_book:', 'emoji/blue_book.png', 'Blue_book'),
-		array( 89, ':blue_car:', 'emoji/blue_car.png', 'Blue_car'),
-		array( 90, ':blue_heart:', 'emoji/blue_heart.png', 'Blue_heart'),
-		array( 91, ':blush:', 'emoji/blush.png', 'Blush'),
-		array( 92, ':boar:', 'emoji/boar.png', 'Boar'),
-		array( 93, ':boat:', 'emoji/boat.png', 'Boat'),
-		array( 94, ':bomb:', 'emoji/bomb.png', 'Bomb'),
-		array( 95, ':book:', 'emoji/book.png', 'Book'),
-		array( 96, ':bookmark:', 'emoji/bookmark.png', 'Bookmark'),
-		array( 97, ':bookmark_tabs:', 'emoji/bookmark_tabs.png', 'Bookmark_tabs'),
-		array( 98, ':books:', 'emoji/books.png', 'Books'),
-		array( 99, ':boom:', 'emoji/boom.png', 'Boom'),
-		array( 100, ':boot:', 'emoji/boot.png', 'Boot'),
-		array( 101, ':bouquet:', 'emoji/bouquet.png', 'Bouquet'),
-		array( 102, ':bow:', 'emoji/bow.png', 'Bow'),
-		array( 103, ':bowling:', 'emoji/bowling.png', 'Bowling'),
-		array( 104, ':bowtie:', 'emoji/bowtie.png', 'Bowtie'),
-		array( 105, ':boy:', 'emoji/boy.png', 'Boy'),
-		array( 106, ':bread:', 'emoji/bread.png', 'Bread'),
-		array( 107, ':bride_with_veil:', 'emoji/bride_with_veil.png', 'Bride_with_veil'),
-		array( 108, ':bridge_at_night:', 'emoji/bridge_at_night.png', 'Bridge_at_night'),
-		array( 109, ':briefcase:', 'emoji/briefcase.png', 'Briefcase'),
-		array( 110, ':broken_heart:', 'emoji/broken_heart.png', 'Broken_heart'),
-		array( 111, ':bug:', 'emoji/bug.png', 'Bug'),
-		array( 112, ':bulb:', 'emoji/bulb.png', 'Bulb'),
-		array( 113, ':bullettrain_front:', 'emoji/bullettrain_front.png', 'Bullettrain_front'),
-		array( 114, ':bullettrain_side:', 'emoji/bullettrain_side.png', 'Bullettrain_side'),
-		array( 115, ':bus:', 'emoji/bus.png', 'Bus'),
-		array( 116, ':busstop:', 'emoji/busstop.png', 'Busstop'),
-		array( 117, ':busts_in_silhouette:', 'emoji/busts_in_silhouette.png', 'Busts_in_silhouette'),
-		array( 118, ':bust_in_silhouette:', 'emoji/bust_in_silhouette.png', 'Bust_in_silhouette'),
-		array( 119, ':cactus:', 'emoji/cactus.png', 'Cactus'),
-		array( 120, ':cake:', 'emoji/cake.png', 'Cake'),
-		array( 121, ':calendar:', 'emoji/calendar.png', 'Calendar'),
-		array( 122, ':calling:', 'emoji/calling.png', 'Calling'),
-		array( 123, ':camel:', 'emoji/camel.png', 'Camel'),
-		array( 124, ':camera:', 'emoji/camera.png', 'Camera'),
-		array( 125, ':cancer:', 'emoji/cancer.png', 'Cancer'),
-		array( 126, ':candy:', 'emoji/candy.png', 'Candy'),
-		array( 127, ':capital_abcd:', 'emoji/capital_abcd.png', 'Capital_abcd'),
-		array( 128, ':capricorn:', 'emoji/capricorn.png', 'Capricorn'),
-		array( 129, ':car:', 'emoji/car.png', 'Car'),
-		array( 130, ':card_index:', 'emoji/card_index.png', 'Card_index'),
-		array( 131, ':carousel_horse:', 'emoji/carousel_horse.png', 'Carousel_horse'),
-		array( 132, ':cat:', 'emoji/cat.png', 'Cat'),
-		array( 133, ':cat2:', 'emoji/cat2.png', 'Cat2'),
-		array( 134, ':cd:', 'emoji/cd.png', 'Cd'),
-		array( 135, ':chart:', 'emoji/chart.png', 'Chart'),
-		array( 136, ':chart_with_downwards_trend:', 'emoji/chart_with_downwards_trend.png', 'Chart_with_downwards_trend'),
-		array( 137, ':chart_with_upwards_trend:', 'emoji/chart_with_upwards_trend.png', 'Chart_with_upwards_trend'),
-		array( 138, ':checkered_flag:', 'emoji/checkered_flag.png', 'Checkered_flag'),
-		array( 139, ':cherries:', 'emoji/cherries.png', 'Cherries'),
-		array( 140, ':cherry_blossom:', 'emoji/cherry_blossom.png', 'Cherry_blossom'),
-		array( 141, ':chestnut:', 'emoji/chestnut.png', 'Chestnut'),
-		array( 142, ':chicken:', 'emoji/chicken.png', 'Chicken'),
-		array( 143, ':children_crossing:', 'emoji/children_crossing.png', 'Children_crossing'),
-		array( 144, ':chocolate_bar:', 'emoji/chocolate_bar.png', 'Chocolate_bar'),
-		array( 145, ':christmas_tree:', 'emoji/christmas_tree.png', 'Christmas_tree'),
-		array( 146, ':church:', 'emoji/church.png', 'Church'),
-		array( 147, ':cinema:', 'emoji/cinema.png', 'Cinema'),
-		array( 148, ':circus_tent:', 'emoji/circus_tent.png', 'Circus_tent'),
-		array( 149, ':city_sunrise:', 'emoji/city_sunrise.png', 'City_sunrise'),
-		array( 150, ':city_sunset:', 'emoji/city_sunset.png', 'City_sunset'),
-		array( 151, ':cl:', 'emoji/cl.png', 'Cl'),
-		array( 152, ':clap:', 'emoji/clap.png', 'Clap'),
-		array( 153, ':clapper:', 'emoji/clapper.png', 'Clapper'),
-		array( 154, ':clipboard:', 'emoji/clipboard.png', 'Clipboard'),
-		array( 155, ':clock1:', 'emoji/clock1.png', 'Clock1'),
-		array( 156, ':clock10:', 'emoji/clock10.png', 'Clock10'),
-		array( 157, ':clock1030:', 'emoji/clock1030.png', 'Clock1030'),
-		array( 158, ':clock11:', 'emoji/clock11.png', 'Clock11'),
-		array( 159, ':clock1130:', 'emoji/clock1130.png', 'Clock1130'),
-		array( 160, ':clock12:', 'emoji/clock12.png', 'Clock12'),
-		array( 161, ':clock1230:', 'emoji/clock1230.png', 'Clock1230'),
-		array( 162, ':clock130:', 'emoji/clock130.png', 'Clock130'),
-		array( 163, ':clock2:', 'emoji/clock2.png', 'Clock2'),
-		array( 164, ':clock230:', 'emoji/clock230.png', 'Clock230'),
-		array( 165, ':clock3:', 'emoji/clock3.png', 'Clock3'),
-		array( 166, ':clock330:', 'emoji/clock330.png', 'Clock330'),
-		array( 167, ':clock4:', 'emoji/clock4.png', 'Clock4'),
-		array( 168, ':clock430:', 'emoji/clock430.png', 'Clock430'),
-		array( 169, ':clock5:', 'emoji/clock5.png', 'Clock5'),
-		array( 170, ':clock530:', 'emoji/clock530.png', 'Clock530'),
-		array( 171, ':clock6:', 'emoji/clock6.png', 'Clock6'),
-		array( 172, ':clock630:', 'emoji/clock630.png', 'Clock630'),
-		array( 173, ':clock7:', 'emoji/clock7.png', 'Clock7'),
-		array( 174, ':clock730:', 'emoji/clock730.png', 'Clock730'),
-		array( 175, ':clock8:', 'emoji/clock8.png', 'Clock8'),
-		array( 176, ':clock830:', 'emoji/clock830.png', 'Clock830'),
-		array( 177, ':clock9:', 'emoji/clock9.png', 'Clock9'),
-		array( 178, ':clock930:', 'emoji/clock930.png', 'Clock930'),
-		array( 179, ':closed_book:', 'emoji/closed_book.png', 'Closed_book'),
-		array( 180, ':closed_lock_with_key:', 'emoji/closed_lock_with_key.png', 'Closed_lock_with_key'),
-		array( 181, ':closed_umbrella:', 'emoji/closed_umbrella.png', 'Closed_umbrella'),
-		array( 182, ':cloud:', 'emoji/cloud.png', 'Cloud'),
-		array( 183, ':clubs:', 'emoji/clubs.png', 'Clubs'),
-		array( 184, ':cn:', 'emoji/cn.png', 'Cn'),
-		array( 185, ':cocktail:', 'emoji/cocktail.png', 'Cocktail'),
-		array( 186, ':coffee:', 'emoji/coffee.png', 'Coffee'),
-		array( 187, ':cold_sweat:', 'emoji/cold_sweat.png', 'Cold_sweat'),
-		array( 188, ':collision:', 'emoji/collision.png', 'Collision'),
-		array( 189, ':computer:', 'emoji/computer.png', 'Computer'),
-		array( 190, ':confetti_ball:', 'emoji/confetti_ball.png', 'Confetti_ball'),
-		array( 191, ':confounded:', 'emoji/confounded.png', 'Confounded'),
-		array( 192, ':confused:', 'emoji/confused.png', 'Confused'),
-		array( 193, ':congratulations:', 'emoji/congratulations.png', 'Congratulations'),
-		array( 194, ':construction:', 'emoji/construction.png', 'Construction'),
-		array( 195, ':construction_worker:', 'emoji/construction_worker.png', 'Construction_worker'),
-		array( 196, ':convenience_store:', 'emoji/convenience_store.png', 'Convenience_store'),
-		array( 197, ':cookie:', 'emoji/cookie.png', 'Cookie'),
-		array( 198, ':cool:', 'emoji/cool.png', 'Cool'),
-		array( 199, ':cop:', 'emoji/cop.png', 'Cop'),
-		array( 200, ':copyright:', 'emoji/copyright.png', 'Copyright'),
-		array( 201, ':corn:', 'emoji/corn.png', 'Corn'),
-		array( 202, ':couple:', 'emoji/couple.png', 'Couple'),
-		array( 203, ':couplekiss:', 'emoji/couplekiss.png', 'Couplekiss'),
-		array( 204, ':couple_with_heart:', 'emoji/couple_with_heart.png', 'Couple_with_heart'),
-		array( 205, ':cow:', 'emoji/cow.png', 'Cow'),
-		array( 206, ':cow2:', 'emoji/cow2.png', 'Cow2'),
-		array( 207, ':credit_card:', 'emoji/credit_card.png', 'Credit_card'),
-		array( 208, ':crocodile:', 'emoji/crocodile.png', 'Crocodile'),
-		array( 209, ':crossed_flags:', 'emoji/crossed_flags.png', 'Crossed_flags'),
-		array( 210, ':crown:', 'emoji/crown.png', 'Crown'),
-		array( 211, ':cry:', 'emoji/cry.png', 'Cry'),
-		array( 212, ':crying_cat_face:', 'emoji/crying_cat_face.png', 'Crying_cat_face'),
-		array( 213, ':crystal_ball:', 'emoji/crystal_ball.png', 'Crystal_ball'),
-		array( 214, ':cupid:', 'emoji/cupid.png', 'Cupid'),
-		array( 215, ':curly_loop:', 'emoji/curly_loop.png', 'Curly_loop'),
-		array( 216, ':currency_exchange:', 'emoji/currency_exchange.png', 'Currency_exchange'),
-		array( 217, ':curry:', 'emoji/curry.png', 'Curry'),
-		array( 218, ':custard:', 'emoji/custard.png', 'Custard'),
-		array( 219, ':customs:', 'emoji/customs.png', 'Customs'),
-		array( 220, ':cyclone:', 'emoji/cyclone.png', 'Cyclone'),
-		array( 221, ':dancer:', 'emoji/dancer.png', 'Dancer'),
-		array( 222, ':dancers:', 'emoji/dancers.png', 'Dancers'),
-		array( 223, ':dango:', 'emoji/dango.png', 'Dango'),
-		array( 224, ':dart:', 'emoji/dart.png', 'Dart'),
-		array( 225, ':dash:', 'emoji/dash.png', 'Dash'),
-		array( 226, ':date:', 'emoji/date.png', 'Date'),
-		array( 227, ':de:', 'emoji/de.png', 'De'),
-		array( 228, ':deciduous_tree:', 'emoji/deciduous_tree.png', 'Deciduous_tree'),
-		array( 229, ':department_store:', 'emoji/department_store.png', 'Department_store'),
-		array( 230, ':diamonds:', 'emoji/diamonds.png', 'Diamonds'),
-		array( 231, ':diamond_shape_with_a_dot_inside:', 'emoji/diamond_shape_with_a_dot_inside.png', 'Diamond_shape_with_a_dot_inside'),
-		array( 232, ':disappointed:', 'emoji/disappointed.png', 'Disappointed'),
-		array( 233, ':disappointed_relieved:', 'emoji/disappointed_relieved.png', 'Disappointed_relieved'),
-		array( 234, ':dizzy:', 'emoji/dizzy.png', 'Dizzy'),
-		array( 235, ':dizzy_face:', 'emoji/dizzy_face.png', 'Dizzy_face'),
-		array( 236, ':dog:', 'emoji/dog.png', 'Dog'),
-		array( 237, ':dog2:', 'emoji/dog2.png', 'Dog2'),
-		array( 238, ':dollar:', 'emoji/dollar.png', 'Dollar'),
-		array( 239, ':dolls:', 'emoji/dolls.png', 'Dolls'),
-		array( 240, ':dolphin:', 'emoji/dolphin.png', 'Dolphin'),
-		array( 241, ':donut:', 'emoji/donut.png', 'Donut'),
-		array( 242, ':door:', 'emoji/door.png', 'Door'),
-		array( 243, ':doughnut:', 'emoji/doughnut.png', 'Doughnut'),
-		array( 244, ':do_not_litter:', 'emoji/do_not_litter.png', 'Do_not_litter'),
-		array( 245, ':dragon:', 'emoji/dragon.png', 'Dragon'),
-		array( 246, ':dragon_face:', 'emoji/dragon_face.png', 'Dragon_face'),
-		array( 247, ':dress:', 'emoji/dress.png', 'Dress'),
-		array( 248, ':dromedary_camel:', 'emoji/dromedary_camel.png', 'Dromedary_camel'),
-		array( 249, ':droplet:', 'emoji/droplet.png', 'Droplet'),
-		array( 250, ':dvd:', 'emoji/dvd.png', 'Dvd'),
-		array( 251, ':e-mail:', 'emoji/e-mail.png', 'E-mail'),
-		array( 252, ':ear:', 'emoji/ear.png', 'Ear'),
-		array( 253, ':earth_africa:', 'emoji/earth_africa.png', 'Earth_africa'),
-		array( 254, ':earth_americas:', 'emoji/earth_americas.png', 'Earth_americas'),
-		array( 255, ':earth_asia:', 'emoji/earth_asia.png', 'Earth_asia'),
-		array( 256, ':ear_of_rice:', 'emoji/ear_of_rice.png', 'Ear_of_rice'),
-		array( 257, ':egg:', 'emoji/egg.png', 'Egg'),
-		array( 258, ':eggplant:', 'emoji/eggplant.png', 'Eggplant'),
-		array( 259, ':eight:', 'emoji/eight.png', 'Eight'),
-		array( 260, ':eight_pointed_black_star:', 'emoji/eight_pointed_black_star.png', 'Eight_pointed_black_star'),
-		array( 261, ':eight_spoked_asterisk:', 'emoji/eight_spoked_asterisk.png', 'Eight_spoked_asterisk'),
-		array( 262, ':electric_plug:', 'emoji/electric_plug.png', 'Electric_plug'),
-		array( 263, ':elephant:', 'emoji/elephant.png', 'Elephant'),
-		array( 264, ':email:', 'emoji/email.png', 'Email'),
-		array( 265, ':end:', 'emoji/end.png', 'End'),
-		array( 266, ':envelope:', 'emoji/envelope.png', 'Envelope'),
-		array( 267, ':es:', 'emoji/es.png', 'Es'),
-		array( 268, ':euro:', 'emoji/euro.png', 'Euro'),
-		array( 269, ':european_castle:', 'emoji/european_castle.png', 'European_castle'),
-		array( 270, ':european_post_office:', 'emoji/european_post_office.png', 'European_post_office'),
-		array( 271, ':evergreen_tree:', 'emoji/evergreen_tree.png', 'Evergreen_tree'),
-		array( 272, ':exclamation:', 'emoji/exclamation.png', 'Exclamation'),
-		array( 273, ':expressionless:', 'emoji/expressionless.png', 'Expressionless'),
-		array( 274, ':eyeglasses:', 'emoji/eyeglasses.png', 'Eyeglasses'),
-		array( 275, ':eyes:', 'emoji/eyes.png', 'Eyes'),
-		array( 276, ':facepunch:', 'emoji/facepunch.png', 'Facepunch'),
-		array( 277, ':factory:', 'emoji/factory.png', 'Factory'),
-		array( 278, ':fallen_leaf:', 'emoji/fallen_leaf.png', 'Fallen_leaf'),
-		array( 279, ':family:', 'emoji/family.png', 'Family'),
-		array( 280, ':fast_forward:', 'emoji/fast_forward.png', 'Fast_forward'),
-		array( 281, ':fax:', 'emoji/fax.png', 'Fax'),
-		array( 282, ':fearful:', 'emoji/fearful.png', 'Fearful'),
-		array( 283, ':feelsgood:', 'emoji/feelsgood.png', 'Feelsgood'),
-		array( 284, ':feet:', 'emoji/feet.png', 'Feet'),
-		array( 285, ':ferris_wheel:', 'emoji/ferris_wheel.png', 'Ferris_wheel'),
-		array( 286, ':file_folder:', 'emoji/file_folder.png', 'File_folder'),
-		array( 287, ':finnadie:', 'emoji/finnadie.png', 'Finnadie'),
-		array( 288, ':fire:', 'emoji/fire.png', 'Fire'),
-		array( 289, ':fireworks:', 'emoji/fireworks.png', 'Fireworks'),
-		array( 290, ':fire_engine:', 'emoji/fire_engine.png', 'Fire_engine'),
-		array( 291, ':first_quarter_moon:', 'emoji/first_quarter_moon.png', 'First_quarter_moon'),
-		array( 292, ':first_quarter_moon_with_face:', 'emoji/first_quarter_moon_with_face.png', 'First_quarter_moon_with_face'),
-		array( 293, ':fish:', 'emoji/fish.png', 'Fish'),
-		array( 294, ':fishing_pole_and_fish:', 'emoji/fishing_pole_and_fish.png', 'Fishing_pole_and_fish'),
-		array( 295, ':fish_cake:', 'emoji/fish_cake.png', 'Fish_cake'),
-		array( 296, ':fist:', 'emoji/fist.png', 'Fist'),
-		array( 297, ':five:', 'emoji/five.png', 'Five'),
-		array( 298, ':flags:', 'emoji/flags.png', 'Flags'),
-		array( 299, ':flashlight:', 'emoji/flashlight.png', 'Flashlight'),
-		array( 300, ':floppy_disk:', 'emoji/floppy_disk.png', 'Floppy_disk'),
-		array( 301, ':flower_playing_cards:', 'emoji/flower_playing_cards.png', 'Flower_playing_cards'),
-		array( 302, ':flushed:', 'emoji/flushed.png', 'Flushed'),
-		array( 303, ':foggy:', 'emoji/foggy.png', 'Foggy'),
-		array( 304, ':football:', 'emoji/football.png', 'Football'),
-		array( 305, ':fork_and_knife:', 'emoji/fork_and_knife.png', 'Fork_and_knife'),
-		array( 306, ':fountain:', 'emoji/fountain.png', 'Fountain'),
-		array( 307, ':four:', 'emoji/four.png', 'Four'),
-		array( 308, ':four_leaf_clover:', 'emoji/four_leaf_clover.png', 'Four_leaf_clover'),
-		array( 309, ':fr:', 'emoji/fr.png', 'Fr'),
-		array( 310, ':free:', 'emoji/free.png', 'Free'),
-		array( 311, ':fried_shrimp:', 'emoji/fried_shrimp.png', 'Fried_shrimp'),
-		array( 312, ':fries:', 'emoji/fries.png', 'Fries'),
-		array( 313, ':frog:', 'emoji/frog.png', 'Frog'),
-		array( 314, ':frowning:', 'emoji/frowning.png', 'Frowning'),
-		array( 315, ':fu:', 'emoji/fu.png', 'Fu'),
-		array( 316, ':fuelpump:', 'emoji/fuelpump.png', 'Fuelpump'),
-		array( 317, ':full_moon:', 'emoji/full_moon.png', 'Full_moon'),
-		array( 318, ':full_moon_with_face:', 'emoji/full_moon_with_face.png', 'Full_moon_with_face'),
-		array( 319, ':game_die:', 'emoji/game_die.png', 'Game_die'),
-		array( 320, ':gb:', 'emoji/gb.png', 'Gb'),
-		array( 321, ':gem:', 'emoji/gem.png', 'Gem'),
-		array( 322, ':gemini:', 'emoji/gemini.png', 'Gemini'),
-		array( 323, ':ghost:', 'emoji/ghost.png', 'Ghost'),
-		array( 324, ':gift:', 'emoji/gift.png', 'Gift'),
-		array( 325, ':gift_heart:', 'emoji/gift_heart.png', 'Gift_heart'),
-		array( 326, ':girl:', 'emoji/girl.png', 'Girl'),
-		array( 327, ':globe_with_meridians:', 'emoji/globe_with_meridians.png', 'Globe_with_meridians'),
-		array( 328, ':goat:', 'emoji/goat.png', 'Goat'),
-		array( 329, ':goberserk:', 'emoji/goberserk.png', 'Goberserk'),
-		array( 330, ':godmode:', 'emoji/godmode.png', 'Godmode'),
-		array( 331, ':golf:', 'emoji/golf.png', 'Golf'),
-		array( 332, ':grapes:', 'emoji/grapes.png', 'Grapes'),
-		array( 333, ':green_apple:', 'emoji/green_apple.png', 'Green_apple'),
-		array( 334, ':green_book:', 'emoji/green_book.png', 'Green_book'),
-		array( 335, ':green_heart:', 'emoji/green_heart.png', 'Green_heart'),
-		array( 336, ':grey_exclamation:', 'emoji/grey_exclamation.png', 'Grey_exclamation'),
-		array( 337, ':grey_question:', 'emoji/grey_question.png', 'Grey_question'),
-		array( 338, ':grimacing:', 'emoji/grimacing.png', 'Grimacing'),
-		array( 339, ':grin:', 'emoji/grin.png', 'Grin'),
-		array( 340, ':grinning:', 'emoji/grinning.png', 'Grinning'),
-		array( 341, ':guardsman:', 'emoji/guardsman.png', 'Guardsman'),
-		array( 342, ':guitar:', 'emoji/guitar.png', 'Guitar'),
-		array( 343, ':gun:', 'emoji/gun.png', 'Gun'),
-		array( 344, ':haircut:', 'emoji/haircut.png', 'Haircut'),
-		array( 345, ':hamburger:', 'emoji/hamburger.png', 'Hamburger'),
-		array( 346, ':hammer:', 'emoji/hammer.png', 'Hammer'),
-		array( 347, ':hamster:', 'emoji/hamster.png', 'Hamster'),
-		array( 348, ':hand:', 'emoji/hand.png', 'Hand'),
-		array( 349, ':handbag:', 'emoji/handbag.png', 'Handbag'),
-		array( 350, ':hankey:', 'emoji/hankey.png', 'Hankey'),
-		array( 351, ':hash:', 'emoji/hash.png', 'Hash'),
-		array( 352, ':hatched_chick:', 'emoji/hatched_chick.png', 'Hatched_chick'),
-		array( 353, ':hatching_chick:', 'emoji/hatching_chick.png', 'Hatching_chick'),
-		array( 354, ':headphones:', 'emoji/headphones.png', 'Headphones'),
-		array( 355, ':heart:', 'emoji/heart.png', 'Heart'),
-		array( 356, ':heartbeat:', 'emoji/heartbeat.png', 'Heartbeat'),
-		array( 357, ':heartpulse:', 'emoji/heartpulse.png', 'Heartpulse'),
-		array( 358, ':hearts:', 'emoji/hearts.png', 'Hearts'),
-		array( 359, ':heart_decoration:', 'emoji/heart_decoration.png', 'Heart_decoration'),
-		array( 360, ':heart_eyes:', 'emoji/heart_eyes.png', 'Heart_eyes'),
-		array( 361, ':heart_eyes_cat:', 'emoji/heart_eyes_cat.png', 'Heart_eyes_cat'),
-		array( 362, ':hear_no_evil:', 'emoji/hear_no_evil.png', 'Hear_no_evil'),
-		array( 363, ':heavy_check_mark:', 'emoji/heavy_check_mark.png', 'Heavy_check_mark'),
-		array( 364, ':heavy_division_sign:', 'emoji/heavy_division_sign.png', 'Heavy_division_sign'),
-		array( 365, ':heavy_dollar_sign:', 'emoji/heavy_dollar_sign.png', 'Heavy_dollar_sign'),
-		array( 366, ':heavy_exclamation_mark:', 'emoji/heavy_exclamation_mark.png', 'Heavy_exclamation_mark'),
-		array( 367, ':heavy_minus_sign:', 'emoji/heavy_minus_sign.png', 'Heavy_minus_sign'),
-		array( 368, ':heavy_multiplication_x:', 'emoji/heavy_multiplication_x.png', 'Heavy_multiplication_x'),
-		array( 369, ':heavy_plus_sign:', 'emoji/heavy_plus_sign.png', 'Heavy_plus_sign'),
-		array( 370, ':helicopter:', 'emoji/helicopter.png', 'Helicopter'),
-		array( 371, ':herb:', 'emoji/herb.png', 'Herb'),
-		array( 372, ':hibiscus:', 'emoji/hibiscus.png', 'Hibiscus'),
-		array( 373, ':high_brightness:', 'emoji/high_brightness.png', 'High_brightness'),
-		array( 374, ':high_heel:', 'emoji/high_heel.png', 'High_heel'),
-		array( 375, ':hocho:', 'emoji/hocho.png', 'Hocho'),
-		array( 376, ':honeybee:', 'emoji/honeybee.png', 'Honeybee'),
-		array( 377, ':honey_pot:', 'emoji/honey_pot.png', 'Honey_pot'),
-		array( 378, ':horse:', 'emoji/horse.png', 'Horse'),
-		array( 379, ':horse_racing:', 'emoji/horse_racing.png', 'Horse_racing'),
-		array( 380, ':hospital:', 'emoji/hospital.png', 'Hospital'),
-		array( 381, ':hotel:', 'emoji/hotel.png', 'Hotel'),
-		array( 382, ':hotsprings:', 'emoji/hotsprings.png', 'Hotsprings'),
-		array( 383, ':hourglass:', 'emoji/hourglass.png', 'Hourglass'),
-		array( 384, ':hourglass_flowing_sand:', 'emoji/hourglass_flowing_sand.png', 'Hourglass_flowing_sand'),
-		array( 385, ':house:', 'emoji/house.png', 'House'),
-		array( 386, ':house_with_garden:', 'emoji/house_with_garden.png', 'House_with_garden'),
-		array( 387, ':hurtrealbad:', 'emoji/hurtrealbad.png', 'Hurtrealbad'),
-		array( 388, ':hushed:', 'emoji/hushed.png', 'Hushed'),
-		array( 389, ':icecream:', 'emoji/icecream.png', 'Icecream'),
-		array( 390, ':ice_cream:', 'emoji/ice_cream.png', 'Ice_cream'),
-		array( 391, ':id:', 'emoji/id.png', 'Id'),
-		array( 392, ':ideograph_advantage:', 'emoji/ideograph_advantage.png', 'Ideograph_advantage'),
-		array( 393, ':imp:', 'emoji/imp.png', 'Imp'),
-		array( 394, ':inbox_tray:', 'emoji/inbox_tray.png', 'Inbox_tray'),
-		array( 395, ':incoming_envelope:', 'emoji/incoming_envelope.png', 'Incoming_envelope'),
-		array( 396, ':information_desk_person:', 'emoji/information_desk_person.png', 'Information_desk_person'),
-		array( 397, ':information_source:', 'emoji/information_source.png', 'Information_source'),
-		array( 398, ':innocent:', 'emoji/innocent.png', 'Innocent'),
-		array( 399, ':interrobang:', 'emoji/interrobang.png', 'Interrobang'),
-		array( 400, ':iphone:', 'emoji/iphone.png', 'Iphone'),
-		array( 401, ':it:', 'emoji/it.png', 'It'),
-		array( 402, ':izakaya_lantern:', 'emoji/izakaya_lantern.png', 'Izakaya_lantern'),
-		array( 403, ':jack_o_lantern:', 'emoji/jack_o_lantern.png', 'Jack_o_lantern'),
-		array( 404, ':japan:', 'emoji/japan.png', 'Japan'),
-		array( 405, ':japanese_castle:', 'emoji/japanese_castle.png', 'Japanese_castle'),
-		array( 406, ':japanese_goblin:', 'emoji/japanese_goblin.png', 'Japanese_goblin'),
-		array( 407, ':japanese_ogre:', 'emoji/japanese_ogre.png', 'Japanese_ogre'),
-		array( 408, ':jeans:', 'emoji/jeans.png', 'Jeans'),
-		array( 409, ':joy:', 'emoji/joy.png', 'Joy'),
-		array( 410, ':joy_cat:', 'emoji/joy_cat.png', 'Joy_cat'),
-		array( 411, ':jp:', 'emoji/jp.png', 'Jp'),
-		array( 412, ':key:', 'emoji/key.png', 'Key'),
-		array( 413, ':keycap_ten:', 'emoji/keycap_ten.png', 'Keycap_ten'),
-		array( 414, ':kimono:', 'emoji/kimono.png', 'Kimono'),
-		array( 415, ':kiss:', 'emoji/kiss.png', 'Kiss'),
-		array( 416, ':kissing:', 'emoji/kissing.png', 'Kissing'),
-		array( 417, ':kissing_cat:', 'emoji/kissing_cat.png', 'Kissing_cat'),
-		array( 418, ':kissing_closed_eyes:', 'emoji/kissing_closed_eyes.png', 'Kissing_closed_eyes'),
-		array( 419, ':kissing_face:', 'emoji/kissing_face.png', 'Kissing_face'),
-		array( 420, ':kissing_heart:', 'emoji/kissing_heart.png', 'Kissing_heart'),
-		array( 421, ':kissing_smiling_eyes:', 'emoji/kissing_smiling_eyes.png', 'Kissing_smiling_eyes'),
-		array( 422, ':koala:', 'emoji/koala.png', 'Koala'),
-		array( 423, ':koko:', 'emoji/koko.png', 'Koko'),
-		array( 424, ':kr:', 'emoji/kr.png', 'Kr'),
-		array( 425, ':large_blue_circle:', 'emoji/large_blue_circle.png', 'Large_blue_circle'),
-		array( 426, ':large_blue_diamond:', 'emoji/large_blue_diamond.png', 'Large_blue_diamond'),
-		array( 427, ':large_orange_diamond:', 'emoji/large_orange_diamond.png', 'Large_orange_diamond'),
-		array( 428, ':last_quarter_moon:', 'emoji/last_quarter_moon.png', 'Last_quarter_moon'),
-		array( 429, ':last_quarter_moon_with_face:', 'emoji/last_quarter_moon_with_face.png', 'Last_quarter_moon_with_face'),
-		array( 430, ':laughing:', 'emoji/laughing.png', 'Laughing'),
-		array( 431, ':leaves:', 'emoji/leaves.png', 'Leaves'),
-		array( 432, ':ledger:', 'emoji/ledger.png', 'Ledger'),
-		array( 433, ':leftwards_arrow_with_hook:', 'emoji/leftwards_arrow_with_hook.png', 'Leftwards_arrow_with_hook'),
-		array( 434, ':left_luggage:', 'emoji/left_luggage.png', 'Left_luggage'),
-		array( 435, ':left_right_arrow:', 'emoji/left_right_arrow.png', 'Left_right_arrow'),
-		array( 436, ':lemon:', 'emoji/lemon.png', 'Lemon'),
-		array( 437, ':leo:', 'emoji/leo.png', 'Leo'),
-		array( 438, ':leopard:', 'emoji/leopard.png', 'Leopard'),
-		array( 439, ':libra:', 'emoji/libra.png', 'Libra'),
-		array( 440, ':light_rail:', 'emoji/light_rail.png', 'Light_rail'),
-		array( 441, ':link:', 'emoji/link.png', 'Link'),
-		array( 442, ':lips:', 'emoji/lips.png', 'Lips'),
-		array( 443, ':lipstick:', 'emoji/lipstick.png', 'Lipstick'),
-		array( 444, ':lock:', 'emoji/lock.png', 'Lock'),
-		array( 445, ':lock_with_ink_pen:', 'emoji/lock_with_ink_pen.png', 'Lock_with_ink_pen'),
-		array( 446, ':lollipop:', 'emoji/lollipop.png', 'Lollipop'),
-		array( 447, ':loop:', 'emoji/loop.png', 'Loop'),
-		array( 448, ':loudspeaker:', 'emoji/loudspeaker.png', 'Loudspeaker'),
-		array( 449, ':love_hotel:', 'emoji/love_hotel.png', 'Love_hotel'),
-		array( 450, ':love_letter:', 'emoji/love_letter.png', 'Love_letter'),
-		array( 451, ':low_brightness:', 'emoji/low_brightness.png', 'Low_brightness'),
-		array( 452, ':m:', 'emoji/m.png', 'M'),
-		array( 453, ':mag:', 'emoji/mag.png', 'Mag'),
-		array( 454, ':mag_right:', 'emoji/mag_right.png', 'Mag_right'),
-		array( 455, ':mahjong:', 'emoji/mahjong.png', 'Mahjong'),
-		array( 456, ':mailbox:', 'emoji/mailbox.png', 'Mailbox'),
-		array( 457, ':mailbox_closed:', 'emoji/mailbox_closed.png', 'Mailbox_closed'),
-		array( 458, ':mailbox_with_mail:', 'emoji/mailbox_with_mail.png', 'Mailbox_with_mail'),
-		array( 459, ':mailbox_with_no_mail:', 'emoji/mailbox_with_no_mail.png', 'Mailbox_with_no_mail'),
-		array( 460, ':man:', 'emoji/man.png', 'Man'),
-		array( 461, ':mans_shoe:', 'emoji/mans_shoe.png', 'Mans_shoe'),
-		array( 462, ':man_with_gua_pi_mao:', 'emoji/man_with_gua_pi_mao.png', 'Man_with_gua_pi_mao'),
-		array( 463, ':man_with_turban:', 'emoji/man_with_turban.png', 'Man_with_turban'),
-		array( 464, ':maple_leaf:', 'emoji/maple_leaf.png', 'Maple_leaf'),
-		array( 465, ':mask:', 'emoji/mask.png', 'Mask'),
-		array( 466, ':massage:', 'emoji/massage.png', 'Massage'),
-		array( 467, ':meat_on_bone:', 'emoji/meat_on_bone.png', 'Meat_on_bone'),
-		array( 468, ':mega:', 'emoji/mega.png', 'Mega'),
-		array( 469, ':melon:', 'emoji/melon.png', 'Melon'),
-		array( 470, ':memo:', 'emoji/memo.png', 'Memo'),
-		array( 471, ':mens:', 'emoji/mens.png', 'Mens'),
-		array( 472, ':metal:', 'emoji/metal.png', 'Metal'),
-		array( 473, ':metro:', 'emoji/metro.png', 'Metro'),
-		array( 474, ':microphone:', 'emoji/microphone.png', 'Microphone'),
-		array( 475, ':microscope:', 'emoji/microscope.png', 'Microscope'),
-		array( 476, ':milky_way:', 'emoji/milky_way.png', 'Milky_way'),
-		array( 477, ':minibus:', 'emoji/minibus.png', 'Minibus'),
-		array( 478, ':minidisc:', 'emoji/minidisc.png', 'Minidisc'),
-		array( 479, ':mobile_phone_off:', 'emoji/mobile_phone_off.png', 'Mobile_phone_off'),
-		array( 480, ':moneybag:', 'emoji/moneybag.png', 'Moneybag'),
-		array( 481, ':money_with_wings:', 'emoji/money_with_wings.png', 'Money_with_wings'),
-		array( 482, ':monkey:', 'emoji/monkey.png', 'Monkey'),
-		array( 483, ':monkey_face:', 'emoji/monkey_face.png', 'Monkey_face'),
-		array( 484, ':monorail:', 'emoji/monorail.png', 'Monorail'),
-		array( 485, ':moon:', 'emoji/moon.png', 'Moon'),
-		array( 486, ':mortar_board:', 'emoji/mortar_board.png', 'Mortar_board'),
-		array( 487, ':mountain_bicyclist:', 'emoji/mountain_bicyclist.png', 'Mountain_bicyclist'),
-		array( 488, ':mountain_cableway:', 'emoji/mountain_cableway.png', 'Mountain_cableway'),
-		array( 489, ':mountain_railway:', 'emoji/mountain_railway.png', 'Mountain_railway'),
-		array( 490, ':mount_fuji:', 'emoji/mount_fuji.png', 'Mount_fuji'),
-		array( 491, ':mouse:', 'emoji/mouse.png', 'Mouse'),
-		array( 492, ':mouse2:', 'emoji/mouse2.png', 'Mouse2'),
-		array( 493, ':movie_camera:', 'emoji/movie_camera.png', 'Movie_camera'),
-		array( 494, ':moyai:', 'emoji/moyai.png', 'Moyai'),
-		array( 495, ':muscle:', 'emoji/muscle.png', 'Muscle'),
-		array( 496, ':mushroom:', 'emoji/mushroom.png', 'Mushroom'),
-		array( 497, ':musical_keyboard:', 'emoji/musical_keyboard.png', 'Musical_keyboard'),
-		array( 498, ':musical_note:', 'emoji/musical_note.png', 'Musical_note'),
-		array( 499, ':musical_score:', 'emoji/musical_score.png', 'Musical_score'),
-		array( 500, ':mute:', 'emoji/mute.png', 'Mute'),
-		array( 501, ':nail_care:', 'emoji/nail_care.png', 'Nail_care'),
-		array( 502, ':name_badge:', 'emoji/name_badge.png', 'Name_badge'),
-		array( 503, ':neckbeard:', 'emoji/neckbeard.png', 'Neckbeard'),
-		array( 504, ':necktie:', 'emoji/necktie.png', 'Necktie'),
-		array( 505, ':negative_squared_cross_mark:', 'emoji/negative_squared_cross_mark.png', 'Negative_squared_cross_mark'),
-		array( 506, ':neutral_face:', 'emoji/neutral_face.png', 'Neutral_face'),
-		array( 507, ':new:', 'emoji/new.png', 'New'),
-		array( 508, ':newspaper:', 'emoji/newspaper.png', 'Newspaper'),
-		array( 509, ':new_moon:', 'emoji/new_moon.png', 'New_moon'),
-		array( 510, ':new_moon_with_face:', 'emoji/new_moon_with_face.png', 'New_moon_with_face'),
-		array( 511, ':ng:', 'emoji/ng.png', 'Ng'),
-		array( 512, ':nine:', 'emoji/nine.png', 'Nine'),
-		array( 513, ':non-potable_water:', 'emoji/non-potable_water.png', 'Non-potable_water'),
-		array( 514, ':nose:', 'emoji/nose.png', 'Nose'),
-		array( 515, ':notebook:', 'emoji/notebook.png', 'Notebook'),
-		array( 516, ':notebook_with_decorative_cover:', 'emoji/notebook_with_decorative_cover.png', 'Notebook_with_decorative_cover'),
-		array( 517, ':notes:', 'emoji/notes.png', 'Notes'),
-		array( 518, ':no_bell:', 'emoji/no_bell.png', 'No_bell'),
-		array( 519, ':no_bicycles:', 'emoji/no_bicycles.png', 'No_bicycles'),
-		array( 520, ':no_entry:', 'emoji/no_entry.png', 'No_entry'),
-		array( 521, ':no_entry_sign:', 'emoji/no_entry_sign.png', 'No_entry_sign'),
-		array( 522, ':no_good:', 'emoji/no_good.png', 'No_good'),
-		array( 523, ':no_mobile_phones:', 'emoji/no_mobile_phones.png', 'No_mobile_phones'),
-		array( 524, ':no_mouth:', 'emoji/no_mouth.png', 'No_mouth'),
-		array( 525, ':no_pedestrians:', 'emoji/no_pedestrians.png', 'No_pedestrians'),
-		array( 526, ':no_smoking:', 'emoji/no_smoking.png', 'No_smoking'),
-		array( 527, ':nut_and_bolt:', 'emoji/nut_and_bolt.png', 'Nut_and_bolt'),
-		array( 528, ':o:', 'emoji/o.png', 'O'),
-		array( 529, ':o2:', 'emoji/o2.png', 'O2'),
-		array( 530, ':ocean:', 'emoji/ocean.png', 'Ocean'),
-		array( 531, ':octocat:', 'emoji/octocat.png', 'Octocat'),
-		array( 532, ':octopus:', 'emoji/octopus.png', 'Octopus'),
-		array( 533, ':oden:', 'emoji/oden.png', 'Oden'),
-		array( 534, ':office:', 'emoji/office.png', 'Office'),
-		array( 535, ':ok:', 'emoji/ok.png', 'Ok'),
-		array( 536, ':ok_hand:', 'emoji/ok_hand.png', 'Ok_hand'),
-		array( 537, ':ok_woman:', 'emoji/ok_woman.png', 'Ok_woman'),
-		array( 538, ':older_man:', 'emoji/older_man.png', 'Older_man'),
-		array( 539, ':older_woman:', 'emoji/older_woman.png', 'Older_woman'),
-		array( 540, ':on:', 'emoji/on.png', 'On'),
-		array( 541, ':oncoming_automobile:', 'emoji/oncoming_automobile.png', 'Oncoming_automobile'),
-		array( 542, ':oncoming_bus:', 'emoji/oncoming_bus.png', 'Oncoming_bus'),
-		array( 543, ':oncoming_police_car:', 'emoji/oncoming_police_car.png', 'Oncoming_police_car'),
-		array( 544, ':oncoming_taxi:', 'emoji/oncoming_taxi.png', 'Oncoming_taxi'),
-		array( 545, ':one:', 'emoji/one.png', 'One'),
-		array( 546, ':open_file_folder:', 'emoji/open_file_folder.png', 'Open_file_folder'),
-		array( 547, ':open_hands:', 'emoji/open_hands.png', 'Open_hands'),
-		array( 548, ':open_mouth:', 'emoji/open_mouth.png', 'Open_mouth'),
-		array( 549, ':ophiuchus:', 'emoji/ophiuchus.png', 'Ophiuchus'),
-		array( 550, ':orange_book:', 'emoji/orange_book.png', 'Orange_book'),
-		array( 551, ':outbox_tray:', 'emoji/outbox_tray.png', 'Outbox_tray'),
-		array( 552, ':ox:', 'emoji/ox.png', 'Ox'),
-		array( 553, ':pager:', 'emoji/pager.png', 'Pager'),
-		array( 554, ':page_facing_up:', 'emoji/page_facing_up.png', 'Page_facing_up'),
-		array( 555, ':page_with_curl:', 'emoji/page_with_curl.png', 'Page_with_curl'),
-		array( 556, ':palm_tree:', 'emoji/palm_tree.png', 'Palm_tree'),
-		array( 557, ':panda_face:', 'emoji/panda_face.png', 'Panda_face'),
-		array( 558, ':paperclip:', 'emoji/paperclip.png', 'Paperclip'),
-		array( 559, ':parking:', 'emoji/parking.png', 'Parking'),
-		array( 560, ':partly_sunny:', 'emoji/partly_sunny.png', 'Partly_sunny'),
-		array( 561, ':part_alternation_mark:', 'emoji/part_alternation_mark.png', 'Part_alternation_mark'),
-		array( 562, ':passport_control:', 'emoji/passport_control.png', 'Passport_control'),
-		array( 563, ':paw_prints:', 'emoji/paw_prints.png', 'Paw_prints'),
-		array( 564, ':peach:', 'emoji/peach.png', 'Peach'),
-		array( 565, ':pear:', 'emoji/pear.png', 'Pear'),
-		array( 566, ':pencil:', 'emoji/pencil.png', 'Pencil'),
-		array( 567, ':pencil2:', 'emoji/pencil2.png', 'Pencil2'),
-		array( 568, ':penguin:', 'emoji/penguin.png', 'Penguin'),
-		array( 569, ':pensive:', 'emoji/pensive.png', 'Pensive'),
-		array( 570, ':performing_arts:', 'emoji/performing_arts.png', 'Performing_arts'),
-		array( 571, ':persevere:', 'emoji/persevere.png', 'Persevere'),
-		array( 572, ':person_frowning:', 'emoji/person_frowning.png', 'Person_frowning'),
-		array( 573, ':person_with_blond_hair:', 'emoji/person_with_blond_hair.png', 'Person_with_blond_hair'),
-		array( 574, ':person_with_pouting_face:', 'emoji/person_with_pouting_face.png', 'Person_with_pouting_face'),
-		array( 575, ':phone:', 'emoji/phone.png', 'Phone'),
-		array( 576, ':pig:', 'emoji/pig.png', 'Pig'),
-		array( 577, ':pig2:', 'emoji/pig2.png', 'Pig2'),
-		array( 578, ':pig_nose:', 'emoji/pig_nose.png', 'Pig_nose'),
-		array( 579, ':pill:', 'emoji/pill.png', 'Pill'),
-		array( 580, ':pineapple:', 'emoji/pineapple.png', 'Pineapple'),
-		array( 581, ':pisces:', 'emoji/pisces.png', 'Pisces'),
-		array( 582, ':pizza:', 'emoji/pizza.png', 'Pizza'),
-		array( 583, ':plus1:', 'emoji/plus1.png', 'Plus1'),
-		array( 584, ':point_down:', 'emoji/point_down.png', 'Point_down'),
-		array( 585, ':point_left:', 'emoji/point_left.png', 'Point_left'),
-		array( 586, ':point_right:', 'emoji/point_right.png', 'Point_right'),
-		array( 587, ':point_up:', 'emoji/point_up.png', 'Point_up'),
-		array( 588, ':point_up_2:', 'emoji/point_up_2.png', 'Point_up_2'),
-		array( 589, ':police_car:', 'emoji/police_car.png', 'Police_car'),
-		array( 590, ':poodle:', 'emoji/poodle.png', 'Poodle'),
-		array( 591, ':poop:', 'emoji/poop.png', 'Poop'),
-		array( 592, ':postal_horn:', 'emoji/postal_horn.png', 'Postal_horn'),
-		array( 593, ':postbox:', 'emoji/postbox.png', 'Postbox'),
-		array( 594, ':post_office:', 'emoji/post_office.png', 'Post_office'),
-		array( 595, ':potable_water:', 'emoji/potable_water.png', 'Potable_water'),
-		array( 596, ':pouch:', 'emoji/pouch.png', 'Pouch'),
-		array( 597, ':poultry_leg:', 'emoji/poultry_leg.png', 'Poultry_leg'),
-		array( 598, ':pound:', 'emoji/pound.png', 'Pound'),
-		array( 599, ':pouting_cat:', 'emoji/pouting_cat.png', 'Pouting_cat'),
-		array( 600, ':pray:', 'emoji/pray.png', 'Pray'),
-		array( 601, ':princess:', 'emoji/princess.png', 'Princess'),
-		array( 602, ':punch:', 'emoji/punch.png', 'Punch'),
-		array( 603, ':purple_heart:', 'emoji/purple_heart.png', 'Purple_heart'),
-		array( 604, ':purse:', 'emoji/purse.png', 'Purse'),
-		array( 605, ':pushpin:', 'emoji/pushpin.png', 'Pushpin'),
-		array( 606, ':put_litter_in_its_place:', 'emoji/put_litter_in_its_place.png', 'Put_litter_in_its_place'),
-		array( 607, ':question:', 'emoji/question.png', 'Question'),
-		array( 608, ':rabbit:', 'emoji/rabbit.png', 'Rabbit'),
-		array( 609, ':rabbit2:', 'emoji/rabbit2.png', 'Rabbit2'),
-		array( 610, ':racehorse:', 'emoji/racehorse.png', 'Racehorse'),
-		array( 611, ':radio:', 'emoji/radio.png', 'Radio'),
-		array( 612, ':radio_button:', 'emoji/radio_button.png', 'Radio_button'),
-		array( 613, ':rage:', 'emoji/rage.png', 'Rage'),
-		array( 614, ':rage1:', 'emoji/rage1.png', 'Rage1'),
-		array( 615, ':rage2:', 'emoji/rage2.png', 'Rage2'),
-		array( 616, ':rage3:', 'emoji/rage3.png', 'Rage3'),
-		array( 617, ':rage4:', 'emoji/rage4.png', 'Rage4'),
-		array( 618, ':railway_car:', 'emoji/railway_car.png', 'Railway_car'),
-		array( 619, ':rainbow:', 'emoji/rainbow.png', 'Rainbow'),
-		array( 620, ':raised_hand:', 'emoji/raised_hand.png', 'Raised_hand'),
-		array( 621, ':raised_hands:', 'emoji/raised_hands.png', 'Raised_hands'),
-		array( 622, ':raising_hand:', 'emoji/raising_hand.png', 'Raising_hand'),
-		array( 623, ':ram:', 'emoji/ram.png', 'Ram'),
-		array( 624, ':ramen:', 'emoji/ramen.png', 'Ramen'),
-		array( 625, ':rat:', 'emoji/rat.png', 'Rat'),
-		array( 626, ':recycle:', 'emoji/recycle.png', 'Recycle'),
-		array( 627, ':red_car:', 'emoji/red_car.png', 'Red_car'),
-		array( 628, ':red_circle:', 'emoji/red_circle.png', 'Red_circle'),
-		array( 629, ':registered:', 'emoji/registered.png', 'Registered'),
-		array( 630, ':relaxed:', 'emoji/relaxed.png', 'Relaxed'),
-		array( 631, ':relieved:', 'emoji/relieved.png', 'Relieved'),
-		array( 632, ':repeat:', 'emoji/repeat.png', 'Repeat'),
-		array( 633, ':repeat_one:', 'emoji/repeat_one.png', 'Repeat_one'),
-		array( 634, ':restroom:', 'emoji/restroom.png', 'Restroom'),
-		array( 635, ':revolving_hearts:', 'emoji/revolving_hearts.png', 'Revolving_hearts'),
-		array( 636, ':rewind:', 'emoji/rewind.png', 'Rewind'),
-		array( 637, ':ribbon:', 'emoji/ribbon.png', 'Ribbon'),
-		array( 638, ':rice:', 'emoji/rice.png', 'Rice'),
-		array( 639, ':rice_ball:', 'emoji/rice_ball.png', 'Rice_ball'),
-		array( 640, ':rice_cracker:', 'emoji/rice_cracker.png', 'Rice_cracker'),
-		array( 641, ':rice_scene:', 'emoji/rice_scene.png', 'Rice_scene'),
-		array( 642, ':ring:', 'emoji/ring.png', 'Ring'),
-		array( 643, ':rocket:', 'emoji/rocket.png', 'Rocket'),
-		array( 644, ':roller_coaster:', 'emoji/roller_coaster.png', 'Roller_coaster'),
-		array( 645, ':rooster:', 'emoji/rooster.png', 'Rooster'),
-		array( 646, ':rose:', 'emoji/rose.png', 'Rose'),
-		array( 647, ':rotating_light:', 'emoji/rotating_light.png', 'Rotating_light'),
-		array( 648, ':round_pushpin:', 'emoji/round_pushpin.png', 'Round_pushpin'),
-		array( 649, ':rowboat:', 'emoji/rowboat.png', 'Rowboat'),
-		array( 650, ':ru:', 'emoji/ru.png', 'Ru'),
-		array( 651, ':rugby_football:', 'emoji/rugby_football.png', 'Rugby_football'),
-		array( 652, ':runner:', 'emoji/runner.png', 'Runner'),
-		array( 653, ':running:', 'emoji/running.png', 'Running'),
-		array( 654, ':running_shirt_with_sash:', 'emoji/running_shirt_with_sash.png', 'Running_shirt_with_sash'),
-		array( 655, ':sa:', 'emoji/sa.png', 'Sa'),
-		array( 656, ':sagittarius:', 'emoji/sagittarius.png', 'Sagittarius'),
-		array( 657, ':sailboat:', 'emoji/sailboat.png', 'Sailboat'),
-		array( 658, ':sake:', 'emoji/sake.png', 'Sake'),
-		array( 659, ':sandal:', 'emoji/sandal.png', 'Sandal'),
-		array( 660, ':santa:', 'emoji/santa.png', 'Santa'),
-		array( 661, ':satellite:', 'emoji/satellite.png', 'Satellite'),
-		array( 662, ':satisfied:', 'emoji/satisfied.png', 'Satisfied'),
-		array( 663, ':saxophone:', 'emoji/saxophone.png', 'Saxophone'),
-		array( 664, ':school:', 'emoji/school.png', 'School'),
-		array( 665, ':school_satchel:', 'emoji/school_satchel.png', 'School_satchel'),
-		array( 666, ':scissors:', 'emoji/scissors.png', 'Scissors'),
-		array( 667, ':scorpius:', 'emoji/scorpius.png', 'Scorpius'),
-		array( 668, ':scream:', 'emoji/scream.png', 'Scream'),
-		array( 669, ':scream_cat:', 'emoji/scream_cat.png', 'Scream_cat'),
-		array( 670, ':scroll:', 'emoji/scroll.png', 'Scroll'),
-		array( 671, ':seat:', 'emoji/seat.png', 'Seat'),
-		array( 672, ':secret:', 'emoji/secret.png', 'Secret'),
-		array( 673, ':seedling:', 'emoji/seedling.png', 'Seedling'),
-		array( 674, ':see_no_evil:', 'emoji/see_no_evil.png', 'See_no_evil'),
-		array( 675, ':seven:', 'emoji/seven.png', 'Seven'),
-		array( 676, ':shaved_ice:', 'emoji/shaved_ice.png', 'Shaved_ice'),
-		array( 677, ':sheep:', 'emoji/sheep.png', 'Sheep'),
-		array( 678, ':shell:', 'emoji/shell.png', 'Shell'),
-		array( 679, ':ship:', 'emoji/ship.png', 'Ship'),
-		array( 680, ':shipit:', 'emoji/shipit.png', 'Shipit'),
-		array( 681, ':shirt:', 'emoji/shirt.png', 'Shirt'),
-		array( 682, ':shit:', 'emoji/shit.png', 'Shit'),
-		array( 683, ':shoe:', 'emoji/shoe.png', 'Shoe'),
-		array( 684, ':shower:', 'emoji/shower.png', 'Shower'),
-		array( 685, ':signal_strength:', 'emoji/signal_strength.png', 'Signal_strength'),
-		array( 686, ':six:', 'emoji/six.png', 'Six'),
-		array( 687, ':six_pointed_star:', 'emoji/six_pointed_star.png', 'Six_pointed_star'),
-		array( 688, ':ski:', 'emoji/ski.png', 'Ski'),
-		array( 689, ':skull:', 'emoji/skull.png', 'Skull'),
-		array( 690, ':sleeping:', 'emoji/sleeping.png', 'Sleeping'),
-		array( 691, ':sleepy:', 'emoji/sleepy.png', 'Sleepy'),
-		array( 692, ':slot_machine:', 'emoji/slot_machine.png', 'Slot_machine'),
-		array( 693, ':small_blue_diamond:', 'emoji/small_blue_diamond.png', 'Small_blue_diamond'),
-		array( 694, ':small_orange_diamond:', 'emoji/small_orange_diamond.png', 'Small_orange_diamond'),
-		array( 695, ':small_red_triangle:', 'emoji/small_red_triangle.png', 'Small_red_triangle'),
-		array( 696, ':small_red_triangle_down:', 'emoji/small_red_triangle_down.png', 'Small_red_triangle_down'),
-		array( 697, ':smile:', 'emoji/smile.png', 'Smile'),
-		array( 698, ':smiley:', 'emoji/smiley.png', 'Smiley'),
-		array( 699, ':smiley_cat:', 'emoji/smiley_cat.png', 'Smiley_cat'),
-		array( 700, ':smile_cat:', 'emoji/smile_cat.png', 'Smile_cat'),
-		array( 701, ':smiling_imp:', 'emoji/smiling_imp.png', 'Smiling_imp'),
-		array( 702, ':smirk:', 'emoji/smirk.png', 'Smirk'),
-		array( 703, ':smirk_cat:', 'emoji/smirk_cat.png', 'Smirk_cat'),
-		array( 704, ':smoking:', 'emoji/smoking.png', 'Smoking'),
-		array( 705, ':snail:', 'emoji/snail.png', 'Snail'),
-		array( 706, ':snake:', 'emoji/snake.png', 'Snake'),
-		array( 707, ':snowboarder:', 'emoji/snowboarder.png', 'Snowboarder'),
-		array( 708, ':snowflake:', 'emoji/snowflake.png', 'Snowflake'),
-		array( 709, ':snowman:', 'emoji/snowman.png', 'Snowman'),
-		array( 710, ':sob:', 'emoji/sob.png', 'Sob'),
-		array( 711, ':soccer:', 'emoji/soccer.png', 'Soccer'),
-		array( 712, ':soon:', 'emoji/soon.png', 'Soon'),
-		array( 713, ':sos:', 'emoji/sos.png', 'Sos'),
-		array( 714, ':sound:', 'emoji/sound.png', 'Sound'),
-		array( 715, ':space_invader:', 'emoji/space_invader.png', 'Space_invader'),
-		array( 716, ':spades:', 'emoji/spades.png', 'Spades'),
-		array( 717, ':spaghetti:', 'emoji/spaghetti.png', 'Spaghetti'),
-		array( 718, ':sparkler:', 'emoji/sparkler.png', 'Sparkler'),
-		array( 719, ':sparkles:', 'emoji/sparkles.png', 'Sparkles'),
-		array( 720, ':sparkling_heart:', 'emoji/sparkling_heart.png', 'Sparkling_heart'),
-		array( 721, ':speaker:', 'emoji/speaker.png', 'Speaker'),
-		array( 722, ':speak_no_evil:', 'emoji/speak_no_evil.png', 'Speak_no_evil'),
-		array( 723, ':speech_balloon:', 'emoji/speech_balloon.png', 'Speech_balloon'),
-		array( 724, ':speedboat:', 'emoji/speedboat.png', 'Speedboat'),
-		array( 725, ':squirrel:', 'emoji/squirrel.png', 'Squirrel'),
-		array( 726, ':star:', 'emoji/star.png', 'Star'),
-		array( 727, ':star2:', 'emoji/star2.png', 'Star2'),
-		array( 728, ':stars:', 'emoji/stars.png', 'Stars'),
-		array( 729, ':station:', 'emoji/station.png', 'Station'),
-		array( 730, ':statue_of_liberty:', 'emoji/statue_of_liberty.png', 'Statue_of_liberty'),
-		array( 731, ':steam_locomotive:', 'emoji/steam_locomotive.png', 'Steam_locomotive'),
-		array( 732, ':stew:', 'emoji/stew.png', 'Stew'),
-		array( 733, ':straight_ruler:', 'emoji/straight_ruler.png', 'Straight_ruler'),
-		array( 734, ':strawberry:', 'emoji/strawberry.png', 'Strawberry'),
-		array( 735, ':stuck_out_tongue:', 'emoji/stuck_out_tongue.png', 'Stuck_out_tongue'),
-		array( 736, ':stuck_out_tongue_closed_eyes:', 'emoji/stuck_out_tongue_closed_eyes.png', 'Stuck_out_tongue_closed_eyes'),
-		array( 737, ':stuck_out_tongue_winking_eye:', 'emoji/stuck_out_tongue_winking_eye.png', 'Stuck_out_tongue_winking_eye'),
-		array( 738, ':sunflower:', 'emoji/sunflower.png', 'Sunflower'),
-		array( 739, ':sunglasses:', 'emoji/sunglasses.png', 'Sunglasses'),
-		array( 740, ':sunny:', 'emoji/sunny.png', 'Sunny'),
-		array( 741, ':sunrise:', 'emoji/sunrise.png', 'Sunrise'),
-		array( 742, ':sunrise_over_mountains:', 'emoji/sunrise_over_mountains.png', 'Sunrise_over_mountains'),
-		array( 743, ':sun_with_face:', 'emoji/sun_with_face.png', 'Sun_with_face'),
-		array( 744, ':surfer:', 'emoji/surfer.png', 'Surfer'),
-		array( 745, ':sushi:', 'emoji/sushi.png', 'Sushi'),
-		array( 746, ':suspect:', 'emoji/suspect.png', 'Suspect'),
-		array( 747, ':suspension_railway:', 'emoji/suspension_railway.png', 'Suspension_railway'),
-		array( 748, ':sweat:', 'emoji/sweat.png', 'Sweat'),
-		array( 749, ':sweat_drops:', 'emoji/sweat_drops.png', 'Sweat_drops'),
-		array( 750, ':sweat_smile:', 'emoji/sweat_smile.png', 'Sweat_smile'),
-		array( 751, ':sweet_potato:', 'emoji/sweet_potato.png', 'Sweet_potato'),
-		array( 752, ':swimmer:', 'emoji/swimmer.png', 'Swimmer'),
-		array( 753, ':symbols:', 'emoji/symbols.png', 'Symbols'),
-		array( 754, ':syringe:', 'emoji/syringe.png', 'Syringe'),
-		array( 755, ':tada:', 'emoji/tada.png', 'Tada'),
-		array( 756, ':tanabata_tree:', 'emoji/tanabata_tree.png', 'Tanabata_tree'),
-		array( 757, ':tangerine:', 'emoji/tangerine.png', 'Tangerine'),
-		array( 758, ':taurus:', 'emoji/taurus.png', 'Taurus'),
-		array( 759, ':taxi:', 'emoji/taxi.png', 'Taxi'),
-		array( 760, ':tea:', 'emoji/tea.png', 'Tea'),
-		array( 761, ':telephone:', 'emoji/telephone.png', 'Telephone'),
-		array( 762, ':telephone_receiver:', 'emoji/telephone_receiver.png', 'Telephone_receiver'),
-		array( 763, ':telescope:', 'emoji/telescope.png', 'Telescope'),
-		array( 764, ':tennis:', 'emoji/tennis.png', 'Tennis'),
-		array( 765, ':tent:', 'emoji/tent.png', 'Tent'),
-		array( 766, ':thought_balloon:', 'emoji/thought_balloon.png', 'Thought_balloon'),
-		array( 767, ':three:', 'emoji/three.png', 'Three'),
-		array( 768, ':Thumbs:', 'emoji/Thumbs.db', 'Thumbs'),
-		array( 769, ':thumbsdown:', 'emoji/thumbsdown.png', 'Thumbsdown'),
-		array( 770, ':thumbsup:', 'emoji/thumbsup.png', 'Thumbsup'),
-		array( 771, ':ticket:', 'emoji/ticket.png', 'Ticket'),
-		array( 772, ':tiger:', 'emoji/tiger.png', 'Tiger'),
-		array( 773, ':tiger2:', 'emoji/tiger2.png', 'Tiger2'),
-		array( 774, ':tired_face:', 'emoji/tired_face.png', 'Tired_face'),
-		array( 775, ':tm:', 'emoji/tm.png', 'Tm'),
-		array( 776, ':toilet:', 'emoji/toilet.png', 'Toilet'),
-		array( 777, ':tokyo_tower:', 'emoji/tokyo_tower.png', 'Tokyo_tower'),
-		array( 778, ':tomato:', 'emoji/tomato.png', 'Tomato'),
-		array( 779, ':tongue:', 'emoji/tongue.png', 'Tongue'),
-		array( 780, ':top:', 'emoji/top.png', 'Top'),
-		array( 781, ':tophat:', 'emoji/tophat.png', 'Tophat'),
-		array( 782, ':tractor:', 'emoji/tractor.png', 'Tractor'),
-		array( 783, ':traffic_light:', 'emoji/traffic_light.png', 'Traffic_light'),
-		array( 784, ':train:', 'emoji/train.png', 'Train'),
-		array( 785, ':train2:', 'emoji/train2.png', 'Train2'),
-		array( 786, ':tram:', 'emoji/tram.png', 'Tram'),
-		array( 787, ':triangular_flag_on_post:', 'emoji/triangular_flag_on_post.png', 'Triangular_flag_on_post'),
-		array( 788, ':triangular_ruler:', 'emoji/triangular_ruler.png', 'Triangular_ruler'),
-		array( 789, ':trident:', 'emoji/trident.png', 'Trident'),
-		array( 790, ':triumph:', 'emoji/triumph.png', 'Triumph'),
-		array( 791, ':trolleybus:', 'emoji/trolleybus.png', 'Trolleybus'),
-		array( 792, ':trollface:', 'emoji/trollface.png', 'Trollface'),
-		array( 793, ':trophy:', 'emoji/trophy.png', 'Trophy'),
-		array( 794, ':tropical_drink:', 'emoji/tropical_drink.png', 'Tropical_drink'),
-		array( 795, ':tropical_fish:', 'emoji/tropical_fish.png', 'Tropical_fish'),
-		array( 796, ':truck:', 'emoji/truck.png', 'Truck'),
-		array( 797, ':trumpet:', 'emoji/trumpet.png', 'Trumpet'),
-		array( 798, ':tshirt:', 'emoji/tshirt.png', 'Tshirt'),
-		array( 799, ':tulip:', 'emoji/tulip.png', 'Tulip'),
-		array( 800, ':turtle:', 'emoji/turtle.png', 'Turtle'),
-		array( 801, ':tv:', 'emoji/tv.png', 'Tv'),
-		array( 802, ':twisted_rightwards_arrows:', 'emoji/twisted_rightwards_arrows.png', 'Twisted_rightwards_arrows'),
-		array( 803, ':two:', 'emoji/two.png', 'Two'),
-		array( 804, ':two_hearts:', 'emoji/two_hearts.png', 'Two_hearts'),
-		array( 805, ':two_men_holding_hands:', 'emoji/two_men_holding_hands.png', 'Two_men_holding_hands'),
-		array( 806, ':two_women_holding_hands:', 'emoji/two_women_holding_hands.png', 'Two_women_holding_hands'),
-		array( 807, ':u5272:', 'emoji/u5272.png', 'U5272'),
-		array( 808, ':u5408:', 'emoji/u5408.png', 'U5408'),
-		array( 809, ':u55b6:', 'emoji/u55b6.png', 'U55b6'),
-		array( 810, ':u6307:', 'emoji/u6307.png', 'U6307'),
-		array( 811, ':u6708:', 'emoji/u6708.png', 'U6708'),
-		array( 812, ':u6709:', 'emoji/u6709.png', 'U6709'),
-		array( 813, ':u6e80:', 'emoji/u6e80.png', 'U6e80'),
-		array( 814, ':u7121:', 'emoji/u7121.png', 'U7121'),
-		array( 815, ':u7533:', 'emoji/u7533.png', 'U7533'),
-		array( 816, ':u7981:', 'emoji/u7981.png', 'U7981'),
-		array( 817, ':u7a7a:', 'emoji/u7a7a.png', 'U7a7a'),
-		array( 818, ':uk:', 'emoji/uk.png', 'Uk'),
-		array( 819, ':umbrella:', 'emoji/umbrella.png', 'Umbrella'),
-		array( 820, ':unamused:', 'emoji/unamused.png', 'Unamused'),
-		array( 821, ':underage:', 'emoji/underage.png', 'Underage'),
-		array( 822, ':unlock:', 'emoji/unlock.png', 'Unlock'),
-		array( 823, ':up:', 'emoji/up.png', 'Up'),
-		array( 824, ':us:', 'emoji/us.png', 'Us'),
-		array( 825, ':v:', 'emoji/v.png', 'V'),
-		array( 826, ':vertical_traffic_light:', 'emoji/vertical_traffic_light.png', 'Vertical_traffic_light'),
-		array( 827, ':vhs:', 'emoji/vhs.png', 'Vhs'),
-		array( 828, ':vibration_mode:', 'emoji/vibration_mode.png', 'Vibration_mode'),
-		array( 829, ':video_camera:', 'emoji/video_camera.png', 'Video_camera'),
-		array( 830, ':video_game:', 'emoji/video_game.png', 'Video_game'),
-		array( 831, ':violin:', 'emoji/violin.png', 'Violin'),
-		array( 832, ':virgo:', 'emoji/virgo.png', 'Virgo'),
-		array( 833, ':volcano:', 'emoji/volcano.png', 'Volcano'),
-		array( 834, ':vs:', 'emoji/vs.png', 'Vs'),
-		array( 835, ':walking:', 'emoji/walking.png', 'Walking'),
-		array( 836, ':waning_crescent_moon:', 'emoji/waning_crescent_moon.png', 'Waning_crescent_moon'),
-		array( 837, ':waning_gibbous_moon:', 'emoji/waning_gibbous_moon.png', 'Waning_gibbous_moon'),
-		array( 838, ':warning:', 'emoji/warning.png', 'Warning'),
-		array( 839, ':watch:', 'emoji/watch.png', 'Watch'),
-		array( 840, ':watermelon:', 'emoji/watermelon.png', 'Watermelon'),
-		array( 841, ':water_buffalo:', 'emoji/water_buffalo.png', 'Water_buffalo'),
-		array( 842, ':wave:', 'emoji/wave.png', 'Wave'),
-		array( 843, ':wavy_dash:', 'emoji/wavy_dash.png', 'Wavy_dash'),
-		array( 844, ':waxing_crescent_moon:', 'emoji/waxing_crescent_moon.png', 'Waxing_crescent_moon'),
-		array( 845, ':waxing_gibbous_moon:', 'emoji/waxing_gibbous_moon.png', 'Waxing_gibbous_moon'),
-		array( 846, ':wc:', 'emoji/wc.png', 'Wc'),
-		array( 847, ':weary:', 'emoji/weary.png', 'Weary'),
-		array( 848, ':wedding:', 'emoji/wedding.png', 'Wedding'),
-		array( 849, ':whale:', 'emoji/whale.png', 'Whale'),
-		array( 850, ':whale2:', 'emoji/whale2.png', 'Whale2'),
-		array( 851, ':wheelchair:', 'emoji/wheelchair.png', 'Wheelchair'),
-		array( 852, ':white_check_mark:', 'emoji/white_check_mark.png', 'White_check_mark'),
-		array( 853, ':white_circle:', 'emoji/white_circle.png', 'White_circle'),
-		array( 854, ':white_flower:', 'emoji/white_flower.png', 'White_flower'),
-		array( 855, ':white_square:', 'emoji/white_square.png', 'White_square'),
-		array( 856, ':white_square_button:', 'emoji/white_square_button.png', 'White_square_button'),
-		array( 857, ':wind_chime:', 'emoji/wind_chime.png', 'Wind_chime'),
-		array( 858, ':wine_glass:', 'emoji/wine_glass.png', 'Wine_glass'),
-		array( 859, ':wink:', 'emoji/wink.png', 'Wink'),
-		array( 860, ':wolf:', 'emoji/wolf.png', 'Wolf'),
-		array( 861, ':woman:', 'emoji/woman.png', 'Woman'),
-		array( 862, ':womans_clothes:', 'emoji/womans_clothes.png', 'Womans_clothes'),
-		array( 863, ':womans_hat:', 'emoji/womans_hat.png', 'Womans_hat'),
-		array( 864, ':womens:', 'emoji/womens.png', 'Womens'),
-		array( 865, ':worried:', 'emoji/worried.png', 'Worried'),
-		array( 866, ':wrench:', 'emoji/wrench.png', 'Wrench'),
-		array( 867, ':x:', 'emoji/x.png', 'X'),
-		array( 868, ':yellow_heart:', 'emoji/yellow_heart.png', 'Yellow_heart'),
-		array( 869, ':yen:', 'emoji/yen.png', 'Yen'),
-		array( 870, ':yum:', 'emoji/yum.png', 'Yum'),
-		array( 871, ':zap:', 'emoji/zap.png', 'Zap'),
-		array( 872, ':zero:', 'emoji/zero.png', 'Zero'),
-		array( 873, ':zzz:', 'emoji/zzz.png', 'Zzz'),
-		);
-		
-	for ($i = 0; $i < count($emoji); $i++)
-		{
-			$original[] = "/(?<=.\W|\W.|^\W)" . preg_quote($emoji[$i][1], "/") . "(?=.\W|\W.|\W$)/i";
-			$replacement[] = '<img src="http://www.ucdtramp.com/images/smilies/' . $emoji[$i][2] . '" alt="' . $emoji[$i][3] . '" style="height:1.2em;" />';
-		}
-	$text = preg_replace($original, $replacement, ' ' . $text . ' ');
-	
-	$text = substr($text, 1, -1);
-	return $text;
+// Change smilies to images
+function smilify($text, $poster) {
+    global $ucdtcSmilies;
+    global $emojione;   
+
+    // Formatting text to html first
+    // Colour codes
+    $text = preg_replace('/:red:/i', '<span style="color:#FF0000">', $text);
+    $text = preg_replace('/:blue:/i', '<span style="color:#0000FF">', $text);
+    $text = preg_replace('/:green:/i', '<span style="color:#32CD32">', $text);
+    $text = preg_replace('/:pink:/i', '<span style="color:#FF1493">', $text);
+    $text = preg_replace('/:purple:/i', '<span style="color:#C71585">', $text);
+    $text = preg_replace('/:orange:/i', '<span style="color:#FF4500">', $text);
+    $text = preg_replace('/:gray:/i', '<span style="color:#808080">', $text);
+    $text = preg_replace('/:silver:/i', '<span style="color:#COCOCO">', $text);
+    $text = preg_replace('/:thesecretcolour:/i', '<span class="forum-secret-color">', $text);
+    $text = preg_replace('/:endcolour:/i', '</span>', $text);
+    $text = preg_replace('/:endc:/i', '</span>', $text);
+    
+    // Formatting codes
+    $text = preg_replace('/\*\*(.*)\*\*/Uis', '<strong>$1</strong>', $text); // U regex modifier makes match ungreedy so it stops at the first match
+    $text = preg_replace('/\*(.*)\*/Uis', '<em>$1</em>', $text);
+    $text = preg_replace('/__(.*)__/is', '<u>$1</u>', $text);
+    $text = preg_replace('/--(.*)--/is', '<strike>$1</strike>', $text);
+    $text = preg_replace('/\^\^(.*)\^\^/is', '<span class="forum-big-text">$1</span>', $text);
+
+    // Site-wide replacements incl news, forum and polls
+    $text = preg_replace('/Deirdre/i', 'BJ', $text);
+    $text = preg_replace('/D eirdre/i', 'BJ', $text);
+    $text = preg_replace('/D.eirdre/i', 'BJ', $text);
+    $text = preg_replace('/deirdre/i', 'BJ', $text);
+    
+    $text = preg_replace('/Cormac H/i', 'Norman', $text);
+    
+    // ForumUser-only replacements, not site-wide
+    if($poster == 'Sinead'){$text = preg_replace('/Sinead/i', 'Flaps', $text);}
+    
+    if($poster == 'Jordan'){$text = preg_replace('/Jordan/i', 'Obama', $text);}
+    if($poster == 'J o r d a n'){$text = preg_replace('/J o r d a n/i', 'Obama', $text);}
+    if($poster == 'J_o_r_d_a_n'){$text = preg_replace('/J_o_r_d_a_n/i', 'Obama', $text);}
+
+    // Smiley face image replacements from the array defined above
+    for ($i = 0; $i < count($ucdtcSmilies); $i++){
+        $original[] = "/".preg_quote($ucdtcSmilies[$i][0])."/i"; 
+        $replacement[] = '<img class="forum-original-emoji" src="images/emoji/'.$ucdtcSmilies[$i][1].'" alt="'.$ucdtcSmilies[$i][2].'"/>';
+    }
+    $text = preg_replace($original, $replacement, $text);
+    
+    //
+    return $emojione->shortnameToImage($text);
 }

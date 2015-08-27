@@ -1,65 +1,88 @@
-//this function takes edited content from textarea and sends it to the editpage.php script.
-function updatePage(container){
-	$.ajax({
-		type:'POST',
-		url:'http://www.ucdtramp.com/ajax_php/editpage.php',  
-		data:'action=pageUpdate&new_content='+ encodeURIComponent(document.getElementById('new_content').value)+'&pageurl='+(document.getElementById('pageurl').value),
-		success:function(response){ //when successful
-			if(response==1){
-				makeNormal();
-			   }
-			else {$('#pagecontent').html('This message hasnt been saved to the server: <br><br> Error: '+response+'<br><br>');}			
-		} 
-	});
+var Page = {
+    editor: '', // The editor object. Set in startEditor
+    originalHTML: '', 
+    init : function() {
+        this.bindUIActions();
+        // Save original HTML for cancel
+        this.originalHTML = $('#page-content').html();
+    },
+    bindUIActions: function(){
+        $('.js-editor-start').on('click', Page.startHandler);
+        $('.js-btn-cancel').on('click', Page.cancelHandler);
+        $('.js-btn-save').on('click', Page.savePage);
+    },
+
+    startHandler: function(){
+        // Start the editor and set it's content
+        Page.editor = ace.edit("editor");
+        Page.editor.setValue(Page.originalHTML);
+        // Configure
+        Page.configEditor();
+        Page.startLiveUpdate();
+
+        // Change to action buttons
+        Page.toggleButtons();
+    },
+    cancelHandler: function(){
+        // restore the original HTML
+        $('#page-content').html(Page.originalHTML);
+        Page.resetPage();
+    },
+    resetPage: function(){
+        // Remove editor from page and end sessions
+        $('#editor').html('');
+        $('#editor').attr('class', 'full-width');
+        Page.editor.destroy();
+        // Change to edit page button
+        Page.toggleButtons();
+    },
+    toggleButtons: function(){
+        $('.js-editor-start').toggle();
+        $('.js-editor-running').toggle();
+    },
+    configEditor: function(){
+        var editor = Page.editor;
+        editor.setTheme("ace/theme/monokai");
+        editor.getSession().setMode("ace/mode/html");
+        editor.getSession().setUseWrapMode(true);
+        editor.getSession().setUseWorker(false); // disables hints
+        editor.focus(); editor.gotoLine(1); // focus editor and move to topline
+        window.scrollTo(0, $('.content').offset().top); // move window back to top to show editor element
+        editor.$blockScrolling = Infinity; // was told by the editor to do this
+    },
+    startLiveUpdate: function(){
+        // Updates the page when typing has stopped for 500ms
+        var editorTimer = null;
+        Page.editor.on('change', function(){
+            if (editorTimer) {
+                clearTimeout(editorTimer);   // clear previous pending timer
+            }
+            editorTimer = setTimeout(function(){
+                $('#page-content').html(Page.editor.getValue());
+            }, 500);
+        });
+    },
+    savePage: function(){
+        $.ajax({
+            type: 'POST',
+            url : 'page.php',
+            data:'action=pageUpdate'+
+                 '&new_content='+ encodeURIComponent(Page.editor.getValue())+
+                 '&pageurl='+$('#page-content').data('pageid'),
+            dataType: 'text', // server return type
+            success: function(response){
+                if (response === ''){
+                    // refresh the page
+                    document.location.reload();
+                }
+                else{
+                    // show the error dramatically
+                    alert('The page was not saved: '+response);
+                }
+            }
+        });
+    }
 };
-//edit page link calls this function
-//given the content inside database entry which was loaded as html and is given the name content here
-//give the page name which is the url and is sent by php 
-function makeEditable(container,pagename){
-	var content = container.innerHTML;
-	
-	while(container.hasChildNodes()){
-		container.removeChild(container.firstChild);
-	}
-	$boxHeight=window.innerHeight*.8 +'px'
-	
-//create a form
-	content_form = document.createElement('form');
-	content_form.action='';//document.location;
-	content_form.method='POST';
-	content_form.id='content_form';
-	content_form.onsubmit=function () { updatePage();return false; }
-//making submit button for form
-	content_save = document.createElement('input');
-	content_save.type='submit';
-	content_save.value='Save Changes';
-	content_save.onclick=function () { updatePage();return false; } 
-//after container(page content has been updated and save changes clicked update page function is called.
-
-//making textarea inside form
-	content_textarea = document.createElement('textarea');
-	content_textarea.value=content;
-	content_textarea.style.width='100%';
-	content_textarea.style.height=$boxHeight;
-	content_textarea.id='new_content';
-//hidden input in form to hold pageurl
-	content_pageurl = document.createElement('input');
-	content_pageurl.type='hidden';
-	content_pageurl.value=pagename;
-	content_pageurl.id='pageurl';
-//close all
-	content_form.appendChild(content_textarea);
-	content_form.appendChild(content_save);
-	content_form.appendChild(content_pageurl);
-	container.appendChild(content_form);
-}
-
-function makeNormal() {
-	container = document.getElementById('pagecontent');
-	content = document.getElementById('new_content').value;
-	while(container.hasChildNodes()){
-		container.removeChild(container.firstChild);
-	}
-
-	container.innerHTML = content;
-}
+$(document).ready(function () {
+    Page.init();
+});

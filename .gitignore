@@ -1,3 +1,16 @@
 # Git Ignore file
+
+# Node stuff
+node_modules
+
+# Ucdtramp stuff
 images
 photos
+
+# My Stuff
+ASSETS
+deploy ignore
+
+# Sublime Stuff
+ucdtc.sublime-project
+ucdtc.sublime-workspace
