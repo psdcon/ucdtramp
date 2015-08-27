@@ -29,7 +29,7 @@
     <meta name="msapplication-TileImage" content="//ucdtramp.com/images/favicon/mstile-144x144.png">
     <!-- <meta name="theme-color" content="#1971ef"> Android colour -->
     <?= ($_SERVER['SERVER_NAME'] == 'localhost')?
-        '<BASE href="/red.ucdtc/">':
+        '<BASE href="/ucdtramp/">':
         '<BASE href="//ucdtramp.com/refined/">';
     ?>
 
@@ -131,6 +131,7 @@
                             <li role="separator" class="divider"></li>
                             <li><a href="tariff">Tariff</a></li>
                             <li><a href="askatramp">Ask A Tramp</a></li>
+                            <li><a href="youtubevids">Youtube Vids</a></li>
                             <li><a href="page/squad">Squad</a></li>
                             <li><a href="manage_polls.php?show=all">Polls</a></li>
                         </ul>

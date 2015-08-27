@@ -1,0 +1,20 @@
+{
+  "name": "uCDTC",
+  "version": "0.0.1",
+  "description": "Remake of what once I thought was great",
+  "repository": {
+    "type": "git",
+    "url": "?.git"
+  },
+  "author": "Paul Connolly",
+  "devDependencies": {
+    "browser-sync": "^2.7.13",
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^2.3.1",
+    "gulp-minify-css": "^1.2.0",
+    "gulp-uglify": "^1.2.0",
+    "gulp-usemin": "^0.3.11",
+    "gulp-util": "^3.0.6",
+    "vinyl-ftp": "^0.4.4"
+  }
+}

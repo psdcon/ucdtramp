@@ -8,32 +8,32 @@ addHeader();
     <div class="row full-width gallery js-flickity" data-flickity-options='{ "setGallerySize": false, "autoPlay": 5000, "wrapAround": true }'>
 
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">We bounced until the cows came home.</div>
+            <div class="slider-caption slider-transition">We went to Edinburgh, again. SSTO 2015</div>
             <img src="//ucdtramp.com/photos/ssto1415/preview/ssto1415x800.jpg" alt="SSTO 1415" />
         </div>
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">The cows never came home.</div>
+            <div class="slider-caption slider-transition">Christmas fun day. Fun knew no bounds</div>
             <img src="//ucdtramp.com/photos/christmasfunday1415/preview/christmasfunday1415x800.jpg" alt="christmasfunday1415" />
         </div>
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">There were casualties...</div>
-            <div class="slider-feature slider-transition">
-                <img src="//ucdtramp.com/photos/intervarsities1415/preview/intervarsities1415x800.jpg" alt="...">
-                <div>
-                    <h3>Intervarsities</h3>
-                    <p>It was sort of lame but you can check out the photos I suppose. </p>
-                    <p><a href="#" class="btn btn-primary" role="button">Gallery</a> <a href="#" class="btn btn-default" role="button">Report</a></p>
-                </div>
-            </div>
+            <div class="slider-caption slider-transition">Intervarsities Winners for the 4th year in a row! We dont like to brag butt...</div>
             <img src="//ucdtramp.com/images/front_slider/intervs1415.jpg" alt="intervarsities1415" />
         </div>
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">God rest their shredded souls.</div>
+            <div class="slider-caption slider-transition">Who was in the house? In-house was in the house</div>
             <img src="//ucdtramp.com/photos/inhouse1415/preview/inhouse1415x800.jpg" alt="inhouse1415" />
         </div>
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">Why's that guy who looks like screen holding that stick like that? --></div>
+            <div class="slider-caption slider-transition">Cavan. That was awhile ago...</div>
             <img src="//ucdtramp.com/photos/cavan1415/cavan_179.jpg" alt="cavan_179" />
+        </div>
+        <div class="gallery-cell">
+            <div class="slider-caption slider-transition">Tramp night. We all got shitfaced. The night delievered</div>
+            <img src="//ucdtramp.com/photos/trampnight1415/preview/trampnight1415x800.jpg" alt="cavan_179" />
+        </div>
+        <div class="gallery-cell">
+            <div class="slider-caption slider-transition">I wasn't at this but it looked fun. Mind, Body + Soul. Do yoga! Who's that freakishly tall dude?</div>
+            <img src="//ucdtramp.com/photos/mindbodysoul1415/mindbodysoul1415_26%20.jpg" alt="cavan_179" />
         </div>
 
     </div>
@@ -93,8 +93,8 @@ addHeader();
                         <a href="forum.php" class="social-icon soi-twitter animated fadeInDown animation-delay-3"><i class="fa fa-twitter"></i></a>
                         <a href="forum.php" class="social-icon soi-youtube animated fadeInDown animation-delay-4"><i class="fa fa-youtube-play"></i></a>
                         <span class="social-icon soi-snapchat animated fadeInDown animation-delay-5"
-                              data-toggle="tooltip" data-placement="top" data-popup-image title="<img src='images/msc/snapcode.svg' width='250px'>">
-                            <img style="max-width:100%;" src="images/msc/snapcode.svg" alt="Snapchat">
+                              data-toggle="tooltip" data-placement="top" title="<img src='images/pages/homepage/snapcode.svg' width='250px'>">
+                            <img style="max-width:100%;" src="images/pages/homepage/snapcode.svg" alt="Snapchat">
                         </span>
                     </div>
                 </div>
@@ -180,7 +180,7 @@ addHeader();
             <h4><strong>Note from the Webmaster</strong></h4>
             <p>WELCOME! I hope you like the site. If you don't, Paul will weep a mississippi of tears ... </p>
             <p title="Old and/or stupid people">Naturally for the best experience you're going to have to <strong>use Google Chrome</strong> as your browser but come on, who doesn't these days eh?!</p>
-            <p>If you have any feedback, suggestion, secrets, adoration or ideas, head over to the <a href="forum/404">404 Forum</a> and we'll see what we can do.</p>
+            <p>If you have any feedback, suggestions, secrets, adoration or ideas, head over to the <a href="forum/404">404 Forum</a> and we'll see what we can do.</p>
 
             <p>
                 Yours confoundedly,<br>
