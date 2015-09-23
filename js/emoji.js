@@ -1,4 +1,14 @@
 
+// Makes textareas auto grow
+// http://stackoverflow.com/questions/454202/creating-a-textarea-with-auto-resize
+$('textarea').each(function () {
+    this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
+}).on('input', function () {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight+20) + 'px';
+});
+
+
 /*
  Rangy Text Inputs, a cross-browser textarea and text input library plug-in for jQuery.
  Part of Rangy, a cross-browser JavaScript range and selection library

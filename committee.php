@@ -48,10 +48,10 @@ addHeader();
     </ul>
     
     <div>
-        <h4><a href="manage_members.php?action=show&show=all">Members</a></h4>
+        <h4><a href="manage_members.php?action=show&show=all">Members Database</a></h4>
         <ul style="display:inline-block">
             <li><strong>Database</strong></li>
-            <li><a href="manage_members.php?action=show&show=all">All</a></li>
+            <li><a href="manage_members.php?action=show&show=all">All Membs</a></li>
             <li><a href="manage_members.php?action=show&show=committee">Committee</a></li>
             <li><a href="manage_members.php?action=show&show=coach">Coaches</a></li>
             <li><a href="manage_members.php?action=show&show=judge">Judges</a></li>
@@ -59,7 +59,7 @@ addHeader();
 
         <ul style="display:inline-block">
             <li><strong>Email</strong></li>
-            <li><a href="manage_members.php?action=Email&recipients=everyone">All</a></li>
+            <li><a href="manage_members.php?action=Email&recipients=everyone">All Membs</a></li>
             <li><a href="manage_members.php?action=Email&recipients=committee">Committee</a></li>
             <li><a href="manage_members.php?action=Email&recipients=coaches">Coaches</a></li>
             <li><a href="manage_members.php?action=Email&recipients=judges">Judges</a></li>

@@ -14,7 +14,9 @@ RewriteRule ^forum/(\d+)/page/(\d+)$ forum.php?forum=$1&paginationPage=$2 [NC]
 RewriteRule ^gallery/([^/.]+)$ gallery.php?eventname=$1 [NC]
 RewriteRule ^gallery/([^/.]+)/([^/.]+)$ gallery.php?eventname=$1&image=$2 [NC]
 
-RewriteRule ^poll/([^/.]+)$ manage_polls.php?poll=$1 [NC]
+RewriteRule ^polls$ manage_polls.php?show=all [NC]
+RewriteRule ^polls/([^/.]+)$ manage_polls.php?poll=$1 [NC]
+RewriteRule ^polls/results/([^/.]+)$ manage_polls.php?poll=$1&results=show [NC]
 
 ###########################################################
 

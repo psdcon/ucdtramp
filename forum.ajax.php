@@ -2,7 +2,7 @@
 include_once 'includes/functions.php';
 
 if (!isset($_POST['action']))
-    die();
+    die("No POST action");
 
 $ipBlacklist = array('09809','66.36.229.205','84.139.95.31','220.225.172.229','217.159.200.187','66.199.247.42','216.195.49.179','66.79.163.226','206.83.210.59','24.46.72.158','5.39.219.26');
 
@@ -93,7 +93,7 @@ else if ($_POST['action'] == 'editPost'){
     if (!mysqli_query($db, $backupSQL) || !mysqli_query($db, $updateSQL))
         die(json_encode(array('error' => mysqli_error($db))));
     
-    header("Location: forum/".$forumId);
+    header("Location: forum/".$forumId."#".$postId);
 }
 /*
     Likes
@@ -111,7 +111,7 @@ else if ($_POST['action'] == 'sendNotifications'){
     notificationEveryone();
 }
 else if ($_POST['action'] == 'saveSubscription'){
-    $user = (isset($_COOKIE['forumUser']))?  mysqli_real_escape_string($db,$_COOKIE['forumUser']): '';
+    $user = mysqli_real_escape_string($db, $_POST['forumUser']);
     $subscriptionId = mysqli_real_escape_string($db, $_POST['subscriptionId']);
 
     // Do nothing if the id is already in the db
@@ -166,7 +166,10 @@ function sendNotifications($subscriptionIds){
     );
     curl_setopt_array($ch, $curlConfig);
     $response = json_decode(curl_exec($ch), true);
-    if ($response['success'])
+    if ($response == NULL){
+        var_dump(curl_exec($ch));
+    }
+    else if ($response['success'])
         return;
     else // some kind of error
         return (json_encode($response['results'][0]));

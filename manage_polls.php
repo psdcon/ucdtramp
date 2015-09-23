@@ -11,7 +11,7 @@ if (isset($_GET['action']) && $loggedIn) {
         echo '
         <h2>
             Creating Poll
-            <small><small><a href="manage_polls.php" title="Back to all Polls">Poll menu</a></small></small>
+            <small><small><a href="polls" title="Back to all Polls">Poll menu</a></small></small>
         </h2>
         <style>
             tr td:nth-of-type(1) {
@@ -74,7 +74,7 @@ if (isset($_GET['action']) && $loggedIn) {
                     numofoptions=".$i." 
                 WHERE id=".$lastId);
         }
-        header("Location:manage_polls.php?poll=".$lastId);
+        header("Location:polls/".$lastId);
     }
 
 // Show/vote on Poll
@@ -97,7 +97,7 @@ if (isset($_GET['action']) && $loggedIn) {
             $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
             if (mysqli_num_rows($existing_voters) > 0){
                 // If they already voted, redirect to results with a warning message
-                header("Location:manage_polls.php?poll=$poll&results=show&naughty=person");
+                header("Location:polls/results/$poll&naughty=person");
             } else {
                 // Increase count
                 $option = mysqli_real_escape_string($db, $_REQUEST['option']);
@@ -112,7 +112,7 @@ if (isset($_GET['action']) && $loggedIn) {
                 // Print error if there's any database problems. This will hault the header() function
                 echo mysqli_error($db);
                 // Otherwise move onto the show results page
-                header("Location:manage_polls.php?poll=$poll&results=show");
+                header("Location:polls/results/$poll");
             }
         }
         
@@ -122,7 +122,7 @@ if (isset($_GET['action']) && $loggedIn) {
             echo '
             <h2>
                 Results
-                <small><small><a href="manage_polls.php" title="Back to all Polls">Poll menu</a></small></small>
+                <small><small><a href="polls" title="Back to all Polls">Poll menu</a></small></small>
             </h2>';
 
             // Check to see if the user has already voted on this poll
@@ -131,7 +131,7 @@ if (isset($_GET['action']) && $loggedIn) {
             $tableFooter = '';
             if (mysqli_num_rows($existing_voters) == 0){
                 // Not voted yet
-                $tableFooter = '<a class="btn btn-primary" href="manage_polls.php?poll='.$currentpoll['id'].'">Cast Vote</a>';
+                $tableFooter = '<a class="btn btn-primary" href="polls/'.$currentpoll['id'].'">Cast Vote</a>';
             }
             else {
                 // Aleady voted
@@ -200,13 +200,13 @@ if (isset($_GET['action']) && $loggedIn) {
                 // Aleady voted
                 $tableFooter = '
                     <input disabled class="btn btn-primary disabled" type="submit" name="vote" title="You\'ve already voted" value="Cast Vote" />
-                    <a class="btn btn-default" href="manage_polls.php?poll='.$currentpoll['id'].'&results=show">View Results</a>';
+                    <a class="btn btn-default" href="polls/results/'.$currentpoll['id'].'">View Results</a>';
             }
 
             echo '
             <h2>
                 Vote
-                <small><small><a href="manage_polls.php" title="Back to all Polls">Poll menu</a></small></small>
+                <small><small><a href="polls" title="Back to all Polls">Poll menu</a></small></small>
             </h2>
             <form action="manage_polls.php" method="GET">
                 <table class="table table-hover" style="text-align:left;">
@@ -319,9 +319,9 @@ if (isset($_GET['action']) && $loggedIn) {
                 <tr> 
                     <td>'.$poll['id'].'</td>
                     <td>
-                        <a href="manage_polls.php?poll='.$poll['id'].'&results=show" title="View Results"><i class="fa fa-bar-chart-o"></i> Results</a>
+                        <a href="polls/results/'.$poll['id'].'" title="View Results"><i class="fa fa-bar-chart-o"></i> Results</a>
                         <br>
-                        <a href="manage_polls.php?poll='.$poll['id'].'" title="Vote"><i class="fa fa-crosshairs"></i> Vote</a>
+                        <a href="polls/'.$poll['id'].'" title="Vote"><i class="fa fa-crosshairs"></i> Vote</a>
                     </td>
                     <td>'.$poll['numofoptions'].'</td>
                     <td>'.$poll['numofvotes'].'</td>

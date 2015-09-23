@@ -373,6 +373,9 @@ a.social-icon:hover {
 .soi-snapchat img {
     vertical-align: inherit;
 }
+.news-item {
+    margin-bottom: 2em;
+}
 .news-item__heading {
     display: flex;
     border-bottom: 1px solid grey;
@@ -694,7 +697,7 @@ textarea {
 }
 /*Post styles*/
 .forum-post {
-    margin-bottom: 2em;
+    margin-bottom: 3em;
 }
 .post-header {
     margin-bottom: 5px;

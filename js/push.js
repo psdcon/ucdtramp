@@ -207,7 +207,7 @@ var Push = {
         fetch('forum.ajax.php', {
             method: 'post',
             headers: {"Content-type": "application/x-www-form-urlencoded; charset=UTF-8"},
-            body: 'action=saveSubscription&subscriptionId='+subscriptionId
+            body: 'action=saveSubscription&subscriptionId='+subscriptionId+"&forumUser="+readCookie('forumUser')
         }).then(function(response) {
             // No response
             return (response.text());
@@ -246,6 +246,7 @@ Push.init();
 
 // Awkwardly stuck-in-down-here test for a push notification
 $('.btn-send-me-push').click(function(){
+    console.log("Sending push: "+Push.subscriptionId);
     $.ajax({
         type: 'POST',
         url : 'forum.ajax.php',

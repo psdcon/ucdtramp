@@ -6,6 +6,7 @@ if (!$loggedIn) {
 }
 $title = "Members and what not";
 
+// The year rolls over in September
 $thisyear = (date("n") >= 9) ? date("y").(date("y") + 1) : (date("y") - 1).date("y");
 
 // Default to the current year unless otherwise specified
@@ -35,7 +36,8 @@ switch ($action) {
         $injuries = mysqli_real_escape_string($db, $_REQUEST['injuries']);
         $faculty = mysqli_real_escape_string($db, $_REQUEST['faculty']);
         $stage = mysqli_real_escape_string($db, $_REQUEST['stage']);
-        if (mysqli_query($db, "INSERT INTO members_db (membership_number,firstname,lastname,dob,student_number,term_address,mobile,home_address,home_phone,email,mailinglist,experience,coach,judge,injuries,faculty,stage,comm) VALUES('".$membership_number."','".$firstname."','".$lastname."','".$dob."','".$student_number."','".$term_address."','".$mobile."','".$home_address."','".$home_phone."','".$email."','".$mailinglist."','".$experience."','".$coach."','".$judge."','".$injuries."','".$faculty."','".$stage."','".$comm."')"))
+        if (mysqli_query($db, "INSERT INTO members_db (club_year,membership_number,firstname,lastname,dob,student_number,term_address,mobile,home_address,home_phone,email,mailinglist,experience,coach,judge,injuries,faculty,stage,comm) 
+            VALUES('".$thisyear."','".$membership_number."','".$firstname."','".$lastname."','".$dob."','".$student_number."','".$term_address."','".$mobile."','".$home_address."','".$home_phone."','".$email."','".$mailinglist."','".$experience."','".$coach."','".$judge."','".$injuries."','".$faculty."','".$stage."','".$comm."')"))
             header("Location:manage_members.php?action=show&show=all&field=membership_number&order=DESC&success=".$firstname." ".$lastname." was added");
         else
             echo "Something went wrong: ".mysqli_error($db);
@@ -69,8 +71,8 @@ switch ($action) {
     case 'Delete':
         if (isset($_REQUEST['id'])) {
             // Save name for notice
-            $members_query = mysqli_query($db, "SELECT * FROM members_db WHERE `club_year`='".$year."' AND id='".mysqli_real_escape_string($db, $_REQUEST['id'])."' LIMIT 1");
-            $current_member = mysqli_fetch_array($members_query);
+            $memberSQL = mysqli_query($db, "SELECT * FROM members_db WHERE `club_year`='".$year."' AND id='".mysqli_real_escape_string($db, $_REQUEST['id'])."' LIMIT 1");
+            $current_member = mysqli_fetch_array($memberSQL);
             $fullname = $current_member['firstname'].' '.$current_member['lastname'];
             
             // Set show to 0 so member is not displayed on front end
@@ -83,23 +85,21 @@ switch ($action) {
     
     case 'Copy':
         if (isset($_REQUEST['id'])) {
-            // Save name for notice
-            $members_query = mysqli_query($db, "SELECT * FROM members_db WHERE `club_year`='".$year."' AND id='".mysqli_real_escape_string($db, $_REQUEST['id'])."' LIMIT 1");
-            $current_member = mysqli_fetch_array($members_query);
-            $fullname = $current_member['firstname'].' '.$current_member['lastname'];
+            $memId = mysqli_real_escape_string($db, $_REQUEST['id']);
+
+            // Get members name for use in notice
+            $member = mysqli_fetch_array(mysqli_query($db, "SELECT firstname,lastname FROM members_db WHERE `id` = $memId LIMIT 1"));
+            $name = $member['firstname'].' '.$member['lastname'];
             
-            $copy_query = mysqli_query($db, "
-            CREATE TEMPORARY TABLE tmptable_1 SELECT * FROM members_db WHERE id = ".mysqli_real_escape_string($db, $_REQUEST['id']).";
-            UPDATE tmptable_1 SET `id` = NULL, `membership_number` = 'xx', `club_year` = ".$thisyear.";
-            INSERT INTO table SELECT * FROM tmptable_1;
-            DROP TEMPORARY TABLE IF EXISTS tmptable_1; ");
-            echo "
-            CREATE TEMPORARY TABLE tmptable_1 SELECT * FROM members_db WHERE id = ".mysqli_real_escape_string($db, $_REQUEST['id']).";
-            UPDATE tmptable_1 SET `id` = NULL, `membership_number` = '0', `club_year` = ".$thisyear.";
-            INSERT INTO members_db SELECT * FROM tmptable_1;
-            DROP TEMPORARY TABLE IF EXISTS tmptable_1; ";
-            if ($copy_query)
-                header("Location:manage_members.php?manage_members.php?year=".$year."&success=".$fullname." was copied");
+            $newMembershipNo = mysqli_fetch_array(mysqli_query($db, "SELECT MAX(membership_number) as num FROM members_db WHERE `club_year`='$thisyear' LIMIT 1"));
+            $newMembershipNo = $newMembershipNo['num'] + 1;
+            
+            $insertFields = "`id`, `club_year`, `membership_number`, `firstname`, `lastname`, `dob`, `student_number`, `term_address`, `mobile`, `home_address`, `home_phone`, `email`, `mailinglist`, `experience`, `coach`, `judge`, `injuries`, `faculty`, `stage`, `comm`, `show`";
+            $selectFields = "NULL, '$thisyear', '$newMembershipNo', `firstname`, `lastname`, `dob`, `student_number`, `term_address`, `mobile`, `home_address`, `home_phone`, `email`, `mailinglist`, `experience`, `coach`, `judge`, `injuries`, `faculty`, `stage`, `comm`, `show`";
+            $copyResult = mysqli_query($db, "INSERT INTO `members_db` ($insertFields) SELECT $selectFields FROM `members_db` WHERE `id` = $memId");
+            var_dump($copyResult);
+            if ($copyResult)
+                header("Location:manage_members.php?manage_members.php?year=".$thisyear."&success=".$name." was copied");
             else
                 echo "Something went wrong: ".mysqli_error($db);
         }
@@ -107,11 +107,10 @@ switch ($action) {
     
     case 'Add':
         addHeader();
-        $membership_numbers_query = mysqli_query($db, "SELECT membership_number FROM members_db ORDER BY membership_number DESC");
-        $membership_number_user = mysqli_fetch_array($membership_numbers_query);
-        $membership_number = $membership_number_user['membership_number'] + 1;
+        $membership_number = mysqli_fetch_array(mysqli_query($db, "SELECT MAX(membership_number) AS num FROM members_db WHERE `club_year` = '$thisyear' LIMIT 1"));
+        $membership_number = $membership_number['num'] + 1;
         ?>
-        <!--Javascript code for data and form validation in general.js-->
+        <!--Javascript code for data and form validation is below-->
         <h2>
             Manage Members
             <small><small><a href="manage_members.php?action=show&show=all&field=membership_number&order=ASC">Main Menu</a></small></small>
@@ -120,8 +119,8 @@ switch ($action) {
         
         <form class="form-horizontal" action="manage_members.php" onsubmit="return validateFormOnSubmit(this);" name="memberform" method="POST" role="form">
             <div class="form-group">
-                <label class="col-xs-2" for="membership_number">Membership No.</label>
-                <div class="col-xs-10">
+                <label class="col-md-2" for="membership_number">Membership No.</label>
+                <div class="col-md-10">
                     <input class="form-control" type="text"name="membership_number" value="<?= $membership_number ?>" />
                 </div>
             </div>
@@ -134,8 +133,8 @@ switch ($action) {
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-xs-1">D.O.B </label>
-                <div class="col-xs-3">
+                <label class="col-xs-12 col-md-1">D.O.B</label>
+                <div class="col-xs-4 col-md-3">
                     <select class="form-control" name="dobday" onChange="validDate(document.memberform.dobday,document.memberform.dobmonth,document.memberform.dobyear)">
                     <?php
                         for ($j = 1; $j <= 31; $j++) 
@@ -144,7 +143,7 @@ switch ($action) {
                     </select>
                 </div>
         
-                <div class="col-xs-4">
+                <div class="col-xs-4 col-md-4">
                     <select class="form-control" name="dobmonth" onChange="validDate(document.memberform.dobday,document.memberform.dobmonth,document.memberform.dobyear)">
                         <option value="01">January</option>
                         <option value="02">February</option>
@@ -161,7 +160,7 @@ switch ($action) {
                     </select>
                 </div>
                 
-                <div class="col-xs-4">
+                <div class="col-xs-4 col-md-4">
                     <select class="form-control" name="dobyear" onChange="validDate(document.memberform.dobday,document.memberform.dobmonth,document.memberform.dobyear)">
                     <?php
                         for ($j = (date("Y") - 16); $j >= 1970; $j--)
@@ -172,7 +171,7 @@ switch ($action) {
             </div>
             <div class="form-group">
                 <div class="col-xs-4">
-                    <input class="form-control" type="text" name="student_number" placeholder="Student number">
+                    <input class="form-control" type="text" name="student_number" placeholder="Student number" maxlength="8">
                 </div>
                 <div class="col-xs-4">
                     <input class="form-control" type="text" name="mobile_number" placeholder="Mobile number">
@@ -182,8 +181,10 @@ switch ($action) {
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-xs-12">
+                <div class="col-md-9">
                     <input class="form-control" type="text" name="email" placeholder="Email">
+                </div>
+                <div class="col-md-3">
                     <label>
                         <input type="checkbox" name="mailinglist" checked>
                         Mailing List
@@ -199,31 +200,31 @@ switch ($action) {
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-xs-4">
+                <div class="col-xs-6 col-md-4" style="padding-bottom:1em;">
                     <textarea class="form-control" rows="3" name="experience" placeholder="Experience"></textarea>
                 </div>
-                <div class="col-xs-4">
+                <div class="col-xs-6 col-md-4">
                     <textarea class="form-control" rows="3" name="injuries" placeholder="Injuries"></textarea>
                 </div>
-                <div class="col-xs-4">
+                <div class="col-md-4">
                     <input class="form-control" type="text" name="faculty" placeholder="Faculty">
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-xs-12">
-                    <label for="">Stage:</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="1"> 1st</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="2"> 2nd</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="3"> 3rd</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="4"> 4th</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="X"> Other</label>
+                    <label>Stage:</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="1"> 1st</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="2"> 2nd</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="3"> 3rd</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="4"> 4th</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="X"> Other</label>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-xs-12">
-                    <label class="checkbox-inline" for="coach"><input type="checkbox" name="coach"> Coach</label>
-                    <label class="checkbox-inline" for="judge"><input type="checkbox" name="judge"> Judge</label>
-                    <label class="checkbox-inline" for="comm"><input type="checkbox" name="comm"> Committee</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="coach"> Coach</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="judge"> Judge</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="comm"> Committee</label>
                 </div>
             </div>
             <button class="btn btn-primary" type="submit" name="action" value="Insert">Add Member</button>
@@ -247,8 +248,8 @@ switch ($action) {
         
         <form class="form-horizontal" action="manage_members.php" onsubmit="return validateFormOnSubmit(this);" name="memberform" method="POST" role="form">
             <div class="form-group">
-                <label class="col-xs-2" for="membership_number">Membership No.</label>
-                <div class="col-xs-10">
+                <label class="col-md-2" for="membership_number">Membership No.</label>
+                <div class="col-md-10">
                     <input class="form-control" type="text"name="membership_number" value="<?= $current_member['membership_number'] ?>" />
                 </div>
             </div>
@@ -261,8 +262,8 @@ switch ($action) {
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-xs-1">D.O.B </label>
-                <div class="col-xs-3">
+                <label class="col-xs-12 col-md-1">D.O.B</label>
+                <div class="col-xs-4 col-md-3">
                     <select class="form-control" name="dobday" onChange="validDate(document.memberform.dobday,document.memberform.dobmonth,document.memberform.dobyear)">
                     <?php
                         for ($j = 1; $j <= 31; $j++) 
@@ -327,31 +328,31 @@ switch ($action) {
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-xs-4">
+                <div class="col-xs-6 col-md-4" style="padding-bottom:1em;">
                     <textarea class="form-control" rows="3" name="experience" placeholder="Experience"><?= $current_member['experience'] ?></textarea>
                 </div>
-                <div class="col-xs-4">
+                <div class="col-xs-6 col-md-4">
                     <textarea class="form-control" rows="3" name="injuries" placeholder="Injuries"><?= $current_member['injuries'] ?></textarea>
                 </div>
-                <div class="col-xs-4">
+                <div class="col-xs-12 col-md-4">
                     <input class="form-control" type="text" name="faculty" placeholder="Faculty" value="<?= $current_member['faculty'] ?>">
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-xs-12">
-                    <label for="">Stage:</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="1" <?= ($current_member['stage'] == 1 ? 'checked' : '') ?>> 1st</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="2" <?= ($current_member['stage'] == 2 ? 'checked' : '') ?>> 2nd</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="3" <?= ($current_member['stage'] == 3 ? 'checked' : '') ?>> 3rd</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="4" <?= ($current_member['stage'] == 4 ? 'checked' : '') ?>> 4th</label>
-                    <label for="stage" class="radio-inline"><input type="radio" name="stage" value="X" <?= ($current_member['stage'] == 'X' ? 'checked' : '') ?>> Other</label>
+                    <label>Stage:</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="1" <?= ($current_member['stage'] == 1 ? 'checked' : '') ?>> 1st</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="2" <?= ($current_member['stage'] == 2 ? 'checked' : '') ?>> 2nd</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="3" <?= ($current_member['stage'] == 3 ? 'checked' : '') ?>> 3rd</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="4" <?= ($current_member['stage'] == 4 ? 'checked' : '') ?>> 4th</label>
+                    <label class="radio-inline"><input type="radio" name="stage" value="X" <?= ($current_member['stage'] == 'X' ? 'checked' : '') ?>> Other</label>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-xs-12">
-                    <label class="checkbox-inline" for="coach"><input type="checkbox" name="coach" <?= ($current_member['coach'] == 1 ? 'checked' : '') ?>> Coach</label>
-                    <label class="checkbox-inline" for="judge"><input type="checkbox" name="judge" <?= ($current_member['judge'] == 1 ? 'checked' : '') ?>> Judge</label>
-                    <label class="checkbox-inline" for="comm"><input type="checkbox" name="comm" <?= ($current_member['comm'] == 1 ? 'checked' : '') ?>> Committee</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="coach" <?= ($current_member['coach'] == 1 ? 'checked' : '') ?>> Coach</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="judge" <?= ($current_member['judge'] == 1 ? 'checked' : '') ?>> Judge</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="comm" <?= ($current_member['comm'] == 1 ? 'checked' : '') ?>> Committee</label>
                 </div>
             </div>
             <input type='hidden' name='id' value="<?= $current_member['id'] ?>">
@@ -374,53 +375,53 @@ switch ($action) {
     
         <?php
         if (isset($_GET['success'])) { // If an action has been successful, a msg box will be displayed
-            echo ("<h3 style='color:green'>".$_GET['success']." successfully!</h3>");
+            echo ("<h3 style='color:green'>".$_GET['success']."!</h3>");
         }
 
         // List all members with edit/delete buttons. Not sure why the backticks are necessary but php got upset without them... 
         switch ($show) {
             case 'all':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' ORDER BY `".$field."` ".$order;
                 $pageTitle = "All Members";
                 break;
             case 'committee':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `comm`='1' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `comm`='1' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Committee Members";
                 break;
             case 'coach':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `coach`='1' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `coach`='1' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Coaches";
                 break;
             case 'judge':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `judge`='1' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `judge`='1' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Judges";
                 break;
             case 'under18now':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `dob`>'".(time())."' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `dob`>'".(time())."' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Under 18";
                 break;
             case 'stage1':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `stage`='1' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `stage`='1' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Stage 1";
                 break;
             case 'stage2':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `stage`='2' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `stage`='2' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Stage 2";
                 break;
             case 'stage3':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `stage`='3' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `stage`='3' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Stage 3";
                 break;
             case 'stage4':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `stage`='4' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `stage`='4' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Stage 4";
                 break;
             case 'nostage':
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `stage`!='1' AND `stage`!='2' AND `stage`!='3' AND `stage`!='4' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `stage`!='1' AND `stage`!='2' AND `stage`!='3' AND `stage`!='4' ORDER BY `".$field."` ".$order;
                 $pageTitle = "Other Stages";
                 break;
             default:
-                $query = "SELECT * FROM `members_db` WHERE `club_year`='".$year."' ORDER BY `".$field."` ".$order;
+                $query = "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' ORDER BY `".$field."` ".$order;
                 $pageTitle = "All members";
                 break;
         }
@@ -432,8 +433,9 @@ switch ($action) {
         <p>
             <div class="btn-group">
                 <div class="btn btn-default"><strong>Year:</strong></div>
-                <a class="btn btn-default <?= $year == '1415'? 'active': '' ?>" href="manage_members.php?year=1415&action=show&field=<?= $field ?>&order=<?= $order ?>">1415</a>
-                <a class="btn btn-default <?= $year == '1314'? 'active': '' ?>" href="manage_members.php?year=1314&action=show&field=<?= $field ?>&order=<?= $order ?>">1314</a>
+                <a class="btn btn-default <?= $year == '1516'? 'active': '' ?>" href="manage_members.php?year=1516&action=show&show=<?= $show ?>&field=<?= $field ?>&order=<?= $order ?>">1516</a>
+                <a class="btn btn-default <?= $year == '1415'? 'active': '' ?>" href="manage_members.php?year=1415&action=show&show=<?= $show ?>&field=<?= $field ?>&order=<?= $order ?>">1415</a>
+                <a class="btn btn-default <?= $year == '1314'? 'active': '' ?>" href="manage_members.php?year=1314&action=show&show=<?= $show ?>&field=<?= $field ?>&order=<?= $order ?>">1314</a>
                 <!-- <a class="btn btn-default" href="manage_members.php?year=1213&action=show&field=<?= $field ?>&order=<?= $order ?>">1213</a> -->
             </div>
         </p>
@@ -441,21 +443,21 @@ switch ($action) {
         <p>
             <div class="btn-group">
                 <div class="btn btn-default"><strong>Show: </strong></div>
-                <a class="btn btn-default <?= $show == 'all'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=all">All</a>
-                <a class="btn btn-default <?= $show == 'committee'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=committee">Committee</a>
-                <a class="btn btn-default <?= $show == 'coach'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=coach">Coaches</a>
-                <a class="btn btn-default <?= $show == 'judge'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=judge">Judges</a>
-                <a class="btn btn-default <?= $show == 'under18now'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=under18now">Under 18 (now)</a>
+                <a class="btn btn-default <?= $show == 'all'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=all&field=<?= $field ?>&order=<?= $order ?>">All</a>
+                <a class="btn btn-default <?= $show == 'committee'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=committee&field=<?= $field ?>&order=<?= $order ?>">Committee</a>
+                <a class="btn btn-default <?= $show == 'coach'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=coach&field=<?= $field ?>&order=<?= $order ?>">Coaches</a>
+                <a class="btn btn-default <?= $show == 'judge'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=judge&field=<?= $field ?>&order=<?= $order ?>">Judges</a>
+                <a class="btn btn-default <?= $show == 'under18now'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=under18now&field=<?= $field ?>&order=<?= $order ?>">Under 18 (now)</a>
             </div>
         </p>
         <p>
             <div class="btn-group">
                 <div class="btn btn-default"><strong>Stage: </strong></div>
-                <a class="btn btn-default <?= $show == 'stage1'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage1">1</a>
-                <a class="btn btn-default <?= $show == 'stage2'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage2">2</a>
-                <a class="btn btn-default <?= $show == 'stage3'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage3">3</a>
-                <a class="btn btn-default <?= $show == 'stage4'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage4">4</a>
-                <a class="btn btn-default <?= $show == 'nostage'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=nostage">Other</a>
+                <a class="btn btn-default <?= $show == 'stage1'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage1&field=<?= $field ?>&order=<?= $order ?>">1</a>
+                <a class="btn btn-default <?= $show == 'stage2'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage2&field=<?= $field ?>&order=<?= $order ?>">2</a>
+                <a class="btn btn-default <?= $show == 'stage3'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage3&field=<?= $field ?>&order=<?= $order ?>">3</a>
+                <a class="btn btn-default <?= $show == 'stage4'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=stage4&field=<?= $field ?>&order=<?= $order ?>">4</a>
+                <a class="btn btn-default <?= $show == 'nostage'? 'active': '' ?>" href="manage_members.php?year=<?= $year ?>&action=show&show=nostage&field=<?= $field ?>&order=<?= $order ?>">Other</a>
             </div>
         </p>
 
@@ -479,90 +481,90 @@ switch ($action) {
         
         <div class="table-responsive">
             <table class="table table-striped">
-                <thead>
+                <thead style="position: -webkit-sticky; position: -moz-sticky; position: -ms-sticky; position: -o-sticky; position: sticky; top: 0;">
                     <tr>
                         <td title="Edit/Delete" style="font-size:1em;">
                             <i class="fa fa-cog"></i>
                         </td>
                         <td>
                             No. <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=membership_number&order=ASC"><i <?= ($field == 'membership_number' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=membership_number&order=DESC"><i <?= ($field == 'membership_number' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=membership_number&order=ASC&year=<?= $year ?>"><i <?= ($field == 'membership_number' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=membership_number&order=DESC&year=<?= $year ?>"><i <?= ($field == 'membership_number' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Name <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=firstname&order=ASC"><i <?= ($field == 'firstname' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=firstname&order=DESC"><i <?= ($field == 'firstname' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=firstname&order=ASC&year=<?= $year ?>"><i <?= ($field == 'firstname' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=firstname&order=DESC&year=<?= $year ?>"><i <?= ($field == 'firstname' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             D.O.B. <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=dob&order=ASC"><i <?= ($field == 'dob' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=dob&order=DESC"><i <?= ($field == 'dob' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=dob&order=ASC&year=<?= $year ?>"><i <?= ($field == 'dob' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=dob&order=DESC&year=<?= $year ?>"><i <?= ($field == 'dob' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Student Number <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=student_number&order=ASC"><i <?= ($field == 'student_number' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=student_number&order=DESC"><i <?= ($field == 'student_number' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=student_number&order=ASC&year=<?= $year ?>"><i <?= ($field == 'student_number' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=student_number&order=DESC&year=<?= $year ?>"><i <?= ($field == 'student_number' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Home Address <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_address&order=ASC"><i <?= ($field == 'home_address' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_address&order=DESC"><i <?= ($field == 'home_address' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_address&order=ASC&year=<?= $year ?>"><i <?= ($field == 'home_address' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_address&order=DESC&year=<?= $year ?>"><i <?= ($field == 'home_address' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Term Address <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=term_address&order=ASC"><i <?= ($field == 'term_address' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=term_address&order=DESC"><i <?= ($field == 'term_address' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=term_address&order=ASC&year=<?= $year ?>"><i <?= ($field == 'term_address' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=term_address&order=DESC&year=<?= $year ?>"><i <?= ($field == 'term_address' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Experience <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=experience&order=ASC"><i <?= ($field == 'experience' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=experience&order=DESC"><i <?= ($field == 'experience' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=experience&order=ASC&year=<?= $year ?>"><i <?= ($field == 'experience' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=experience&order=DESC&year=<?= $year ?>"><i <?= ($field == 'experience' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Injuries <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=injuries&order=ASC"><i <?= ($field == 'injuries' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=injuries&order=DESC"><i <?= ($field == 'injuries' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=injuries&order=ASC&year=<?= $year ?>"><i <?= ($field == 'injuries' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=injuries&order=DESC&year=<?= $year ?>"><i <?= ($field == 'injuries' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>                    
                         <td>
                             Mobile Phone <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=ASC"><i <?= ($field == 'mobile' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=DESC"><i <?= ($field == 'mobile' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=ASC&year=<?= $year ?>"><i <?= ($field == 'mobile' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=DESC&year=<?= $year ?>"><i <?= ($field == 'mobile' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Home Phone <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_phone&order=ASC"><i <?= ($field == 'home_phone' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_phone&order=DESC"><i <?= ($field == 'home_phone' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_phone&order=ASC&year=<?= $year ?>"><i <?= ($field == 'home_phone' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_phone&order=DESC&year=<?= $year ?>"><i <?= ($field == 'home_phone' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Email <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=ASC"><i <?= ($field == 'email' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=DESC"><i <?= ($field == 'email' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=ASC&year=<?= $year ?>"><i <?= ($field == 'email' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=DESC&year=<?= $year ?>"><i <?= ($field == 'email' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Coach <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=coach&order=ASC"><i <?= ($field == 'coach' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=coach&order=DESC"><i <?= ($field == 'coach' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=coach&order=ASC&year=<?= $year ?>"><i <?= ($field == 'coach' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=coach&order=DESC&year=<?= $year ?>"><i <?= ($field == 'coach' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Judge <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=coach&order=ASC"><i <?= ($field == 'coach' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=judge&order=DESC"><i <?= ($field == 'judge' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=coach&order=ASC&year=<?= $year ?>"><i <?= ($field == 'coach' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=judge&order=DESC&year=<?= $year ?>"><i <?= ($field == 'judge' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Mailing <br>List
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mailinglist&order=ASC"><i <?= ($field == 'mailinglist' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mailinglist&order=DESC"><i <?= ($field == 'mailinglist' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mailinglist&order=ASC&year=<?= $year ?>"><i <?= ($field == 'mailinglist' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mailinglist&order=DESC&year=<?= $year ?>"><i <?= ($field == 'mailinglist' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Faculty <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=faculty&order=ASC"><i <?= ($field == 'faculty' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=faculty&order=DESC"><i <?= ($field == 'faculty' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=faculty&order=ASC&year=<?= $year ?>"><i <?= ($field == 'faculty' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=faculty&order=DESC&year=<?= $year ?>"><i <?= ($field == 'faculty' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>  
                         <td>
                             Stage <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=stage&order=ASC"><i <?= ($field == 'stage' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=stage&order=DESC"><i <?= ($field == 'stage' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=stage&order=ASC&year=<?= $year ?>"><i <?= ($field == 'stage' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=stage&order=DESC&year=<?= $year ?>"><i <?= ($field == 'stage' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                     </tr>
                 </thead>
@@ -576,7 +578,7 @@ switch ($action) {
                     if ($year != $thisyear) //should not be able to delete or edit
                         echo "
                         <td>
-                            <a href=\"manage_members.php?year=".$year."&id=".$current_member['id']."&action=Copy\" title=\"Copy to this year\"><i class='fa fa-files-o'></i></a>";
+                            <a href=\"manage_members.php?action=Copy&year=".$year."&id=".$current_member['id']."\" title=\"Copy to this year\"><i class='fa fa-files-o'></i></a>";
                     else
                         echo "
                         <td><a href=\"manage_members.php?id=".$current_member['id']."&action=Edit\" title=\"Edit\"><i class='fa fa-pencil'></i></a>
@@ -588,9 +590,9 @@ switch ($action) {
                         <td>".$current_member['formatted_dob']."</td>
                         <td>".sprintf("%08d", $current_member['student_number'])."</td>
                         <td>".$current_member['home_address']."</td>
+                        <td>".$current_member['term_address']."</td>
                         <td>".$current_member['experience']."</td>
                         <td>".$current_member['injuries']."</td>
-                        <td>".$current_member['term_address']."</td>
                         <td>".sprintf("%0".(strlen($current_member['mobile']) + 1)."s", $current_member['mobile'])."</td>
                         <td>".sprintf("%0".(strlen($current_member['home_phone']) + 1)."s", $current_member['home_phone'])."</td>
                         <td>".$current_member['email']."</td>
@@ -614,7 +616,7 @@ switch ($action) {
         $who = mysqli_real_escape_string($db, $_REQUEST['recipients']);
         switch ($who) {
             case 'committee':
-                $committee = mysqli_query($db, "SELECT * FROM `members_db` WHERE `club_year`='".$year."' AND `comm`='1' AND `show`='1'");
+                $committee = mysqli_query($db, "SELECT * FROM `members_db` WHERE `show`=1 AND `club_year`='".$year."' AND `comm`='1' AND `show`='1'");
                 $recipients = 'trampoline@ucd.ie';
                 while ($member = mysqli_fetch_array($committee)) {
                     $recipients .= ", ".$member['email'];

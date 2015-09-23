@@ -42,7 +42,7 @@ gulp.task('js', function() {
 });
 
 // Uploads via ftp any chnages to files on server
-gulp.task( 'deploy', function() {
+gulp.task( 'ftp', function() {
 
     // Connection details. Uses specific ftp user
     var conn = ftp.create( {

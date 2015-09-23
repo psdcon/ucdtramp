@@ -40,3 +40,9 @@
         <?php include 'templates/formatting_help.php'; ?>
     </div>
 </div>
+
+<!-- Files for the emoji picker -->
+<!-- Turns all the shortnames into images -->
+<script src="dist/js/emojione.js"></script>
+<!-- Puts the images into the page -->
+<script src="dist/js/emoji.js"></script>

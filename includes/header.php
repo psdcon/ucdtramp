@@ -28,9 +28,10 @@
     <meta name="msapplication-TileColor" content="#2b5797">
     <meta name="msapplication-TileImage" content="//ucdtramp.com/images/favicon/mstile-144x144.png">
     <!-- <meta name="theme-color" content="#1971ef"> Android colour -->
+    <!-- When using localhost, set the base to be the name of the wamp/www/foler ucdtramp -->
     <?= ($_SERVER['SERVER_NAME'] == 'localhost')?
         '<BASE href="/ucdtramp/">':
-        '<BASE href="//ucdtramp.com/refined/">';
+        '<BASE href="//ucdtramp.com/">';
     ?>
 
     <!-- Facebook meta info -->
@@ -101,7 +102,7 @@
                 <!-- Collect the nav links, forms, and other content for toggling -->
                 <div class="collapse navbar-collapse" id="navbar-main-showhide">
                   <ul class="nav navbar-nav navbar-ul-yellow">
-                    <li><a href="index" title="Home Page">News</a></li>
+                    <li><a href="news" title="Home Page">News</a></li>
                     <li class="dropdown">
                         <a href="about" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                             About <span class="caret"></span>
@@ -133,10 +134,10 @@
                             <li><a href="askatramp">Ask A Tramp</a></li>
                             <li><a href="youtubevids">Youtube Vids</a></li>
                             <li><a href="page/squad">Squad</a></li>
-                            <li><a href="manage_polls.php?show=all">Polls</a></li>
+                            <li><a href="polls">Polls</a></li>
                         </ul>
                     </li>                    
-                    <li><a href="page/contact" title="Self explanatory really">Contact</a></li>
+                    <li><a href="page/contact" title="Talk to us! Please...">Contact</a></li>
                   </ul>
                 </div><!-- /.navbar-collapse -->
               </div><!-- /.container-fluid -->

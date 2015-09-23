@@ -205,7 +205,7 @@ footer img {
     width: auto; /*Photos width (33px) + Padding-left (10px) = 43*/
 }
 .form-control.forum-message {
-    height: 74px;
+    min-height: 74px;    
 }
 .btn-toggle-upload:after {
     content: 'Upload Files...';

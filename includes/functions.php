@@ -77,6 +77,9 @@ function nicetime($date){ // makes nice date on forum posts
 
 // Both ip functions taken from old site for backwards compatability
 function encode_ip($dotquad_ip){
+    if($dotquad_ip=="::1"){
+        return '0.0.0.0' ;
+    }
     $ip_sep = explode('.', $dotquad_ip);
     return sprintf('%02x%02x%02x%02x', $ip_sep[0], $ip_sep[1], $ip_sep[2], $ip_sep[3]);
 }
@@ -185,7 +188,8 @@ function seconds_to_time($secs){
     $str = ($time['days'] == 0)? '': $time['days'].'d ';
     $str .= ($time['hours'] == 0)? '': $time['hours'].'hr';
     $str .= ($time['hours'] > 1)? 's ': '';
-    $str .= $time['minutes'].'min ';
+    if ($time['days'] == 0)
+        $str .= $time['minutes'].'min ';
     return $str;
 }
 

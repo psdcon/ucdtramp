@@ -26,6 +26,7 @@ if (isset($_GET['edit'])){
         $forumMessage = $post['message'];
         
         // Display form
+        $title="Edit Post";
         addHeader();
         include 'templates/edit_forum_form.php';
         addFooter();
@@ -153,13 +154,12 @@ addHeader();
         if($timeLeft > 0){
             echo '
                 <div class="alert forum-notice" title="Notice!">
-                    <p>
-                        <img src="images/emoji/pstar.gif" alt="Pstar">
-                        Theres a new poll! 
-                        <img src="images/emoji/pstar.gif" alt="Pstar">
-                        <small style="cursor:pointer" title="This will disappear when the time is up" class="pull-right">'.seconds_to_time($timeLeft).'</small>
-                    </p>
-                    <a href="manage_polls?poll='.$poll['id'].'">'.$poll['question'].'</a>
+                    <small style="cursor:pointer" title="This will disappear when the time reaches 0" class="pull-right">'.seconds_to_time($timeLeft).'</small>
+                    <img src="images/emoji/normal-smilies/pstar.gif" alt="Pstar">
+                    New Poll! 
+                    <img src="images/emoji/normal-smilies/pstar.gif" alt="Pstar">
+                    <a href="polls/'.$poll['id'].'">'.$poll['question'].'</a>
+
                 </div>';
         }
     }

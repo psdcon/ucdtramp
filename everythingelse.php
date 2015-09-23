@@ -95,7 +95,7 @@ addHeader();
             <thead>
                 <tr>
                     <th>
-                        <a href="manage_polls" title="Click to see all polls">Recent Polls</a>                        
+                        <a href="polls" title="Click to see all polls">Recent Polls</a>                        
                     </th>
                 </tr>
             </thead>
@@ -106,10 +106,10 @@ addHeader();
                     echo 
                     '<tr>
                         <td> 
-                            <a href="manage_polls.php?poll='.$poll['id'].'&results=show" title="View Results">
+                            <a href="polls/'.$poll['id'].'&results=show" title="View Results">
                                 <i class="fa fa-bar-chart-o"></i>
                             </a>
-                            <a href="manage_polls.php?poll='.$poll['id'].'" title="Vote">
+                            <a href="polls/'.$poll['id'].'" title="Vote">
                                 <i class="fa fa-crosshairs"></i>
                             </a>'.
                             smilify($poll['question'],NULL).'
@@ -126,8 +126,8 @@ addHeader();
     
             <a href="page/quotes">Trampy Quotes</a><br>
             <a href="page/ryanbjface">Hahaha!</a><br>
-            <a href="page/log">Website Changelog</a>
-            - Info about updates to the website are half documented here
+            <!-- <a href="page/log">Website Changelog</a>
+            - Info about updates to the website are half documented here -->
     </div>
 </div>
 

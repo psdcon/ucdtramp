@@ -12,7 +12,7 @@ addHeader();
         <p>We admit that trampolining has it's up's and downs but contrary to popular belief trampolining doesn't just involve bouncing around.</p>
     </div>
     <p class="col-xs-12 col-md-10 col-md-offset-1">
-        <img style="width:100%" src="//ucdtramp.com/images/pages/fitness1.jpg" title="It involves being aeroplanes" alt="Flying"/>
+        <img style="width:100%" src="//ucdtramp.com/images/pages/fitness/fitness1.jpg" title="It involves being aeroplanes" alt="Flying"/>
     </p>
 </div>
 <div class="row vcenter-md">
@@ -45,7 +45,7 @@ addHeader();
     </div>
     <div class="col-xs-12 col-md-4">
         <p>
-            <img class="revealOnScroll" data-animation="rotateInDownRight" style="width:100%" src="//ucdtramp.com/images/pages/fitness2.jpg" title="Doesnt that look like fun :)" alt="Flying some more"/>
+            <img class="revealOnScroll" data-animation="rotateInDownRight" style="width:100%" src="//ucdtramp.com/images/pages/fitness/fitness2.jpg" title="Doesnt that look like fun :)" alt="Flying some more"/>
         </p>
     </div>
 </div>
@@ -143,6 +143,7 @@ addHeader();
         <hr>
         <div class="id-link" id="committee"></div>
         <?php
+            // Get links for all committee years for timeline
             $committeePageQuery = "SELECT pagetitle, pageurl FROM `pages` WHERE `eventname` = 'Committee' ORDER BY `pages`.`year` DESC";
             $committeePages = mysqli_query($db, $committeePageQuery);
             echo '<div class="committee-years">Check out previous committees: <br>';
@@ -151,6 +152,7 @@ addHeader();
             }
             echo '</div>';
 
+            // Get newest "committe" page and show it
             $newestCommitteePageQuery = "SELECT * FROM `pages` WHERE `eventname` = 'Committee' ORDER BY `pages`.`year` DESC LIMIT 1";
             $newestPage = mysqli_fetch_array(mysqli_query($db, $newestCommitteePageQuery));
             echo $newestPage['pagecontent'];
