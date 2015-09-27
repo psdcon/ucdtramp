@@ -196,7 +196,7 @@ addHeader();
                 Post
             </button>
         </div>
-        <div class="col-sm-9 col-md-10">
+        <div class="col-sm-9 col-md-10 js-buttons">
             <button type="button" class="btn btn-default btn-toggle-emoji" data-toggle="collapse" data-target="#emoji-picker" aria-expanded="false" aria-controls="emoji-picker">:)</button>
             <!-- <button type="button" class="btn btn-default" data-toggle="collapse" data-target="#jquery-uploader" aria-expanded="false" aria-controls="jquery-uploader"><i class="glyphicon glyphicon-plus "></i> <span class="btn-toggle-upload"></span></button> -->
             <button type="button" class="btn btn-default pull-right" data-toggle="collapse" data-target="#formatting-help" aria-expanded="false" aria-controls="formatting-help"><span class="btn-toggle-formatting"></span></button>

@@ -104,7 +104,7 @@
                   <ul class="nav navbar-nav navbar-ul-yellow">
                     <li><a href="news" title="Home Page">News</a></li>
                     <li class="dropdown">
-                        <a href="about" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <a href="about" title="" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                             About <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu" role="menu">
@@ -116,7 +116,7 @@
                             <li><a href="about#coaches">Coaches</a></li>
                         </ul>
                     </li>
-                    <li><a href="events">Events</a></li>
+                    <li><a href="events" title="Past Events and their Reports">Events</a></li>
                     <li>
                         <a href="forum" title="Where it's at!" style="position:relative;">FORUM
                             <span class="lastPostTime"></span>

@@ -13,11 +13,11 @@ addHeader();
         </div> -->
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">We went to Edinburgh, again. SSTO 2015</div>
-            <img src="//ucdtramp.com/photos/ssto1415/preview/ssto1415x800.jpg" alt="SSTO 1415" />
+            <img src="//ucdtramp.com/photos/ssto1415/preview/ssto1415 (Original).jpg" alt="SSTO 1415" />
         </div>
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">Christmas fun day. Fun knew no bounds</div>
-            <img src="//ucdtramp.com/photos/christmasfunday1415/preview/christmasfunday1415x800.jpg" alt="christmasfunday1415" />
+            <img src="//ucdtramp.com/photos/christmasfunday1415/preview/christmasfunday1415 (Original).jpg" alt="christmasfunday1415" />
         </div>
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">Intervarsities Winners for the 4th year in a row! We dont like to brag but...</div>
@@ -25,7 +25,7 @@ addHeader();
         </div>
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">Who was in the house? In-house was in the house</div>
-            <img src="//ucdtramp.com/photos/inhouse1415/preview/inhouse1415x800.jpg" alt="inhouse1415" />
+            <img src="//ucdtramp.com/photos/inhouse1415/preview/inhouse1415 (Original).jpg" alt="inhouse1415" />
         </div>
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">Cavan. That was awhile ago...</div>
@@ -33,7 +33,7 @@ addHeader();
         </div>
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">Tramp night. We all got shitfaced. The night delievered</div>
-            <img src="//ucdtramp.com/photos/trampnight1415/preview/trampnight1415x800.jpg" alt="cavan_179" />
+            <img src="//ucdtramp.com/photos/trampnight1415/preview/trampnight1415 (Original).jpg" alt="cavan_179" />
         </div>
         <div class="gallery-cell">
             <div class="slider-caption slider-transition">I wasn't at this but it looked fun. Mind, Body + Soul. Do yoga! Who's that freakishly tall dude?</div>
@@ -122,7 +122,7 @@ addHeader();
                     <hr class="visible-xs-block">
                     <h3 class="news-header"><strong>Club News</strong></h3> <?php                      
                     // Get all the news that're in use
-                    $newsQuery = "SELECT *,DATE_FORMAT(datetime,'%a, %D %b') as formatted_date FROM news_items WHERE inuse = '1' ORDER BY id DESC LIMIT 5";
+                    $newsQuery = "SELECT *,DATE_FORMAT(datetime,'%a %D %b') as formatted_date FROM news_items WHERE inuse = '1' ORDER BY id DESC LIMIT 5";
                     $newsResult = mysqli_query($db, $newsQuery);
                     if(mysqli_num_rows($newsResult) == 0){
                         echo '
@@ -141,11 +141,11 @@ addHeader();
                                 <span class="news-item__title">'.
                                     smilify($newsItem["title"], NULL).'
                                 </span>
-                                <small class="news-item__details">
-                                    Posted by '.$newsItem["username"].' on '.$newsItem["formatted_date"].' ';
+                                <small class="news-item__details">'.
+                                    $newsItem["formatted_date"].' by '.$newsItem["username"].' ';
                                     if($loggedIn){
                                         echo'
-                                        <a title="Edit" href="manage_news.php?action=Edit&newsId='.$newsItem["id"].'">
+                                        <a title="Edit" style="margin-left:1em;" href="manage_news.php?action=Edit&newsId='.$newsItem["id"].'">
                                             <i class="fa fa-pencil"></i> Edit
                                         </a>';
                                     } 

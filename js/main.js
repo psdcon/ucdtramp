@@ -229,11 +229,12 @@ var Forum = {
                 $replyFormBtn.removeClass('btn-primary').addClass('btn-warning'); // make it yellow
                 $postFormClone.prop('disabled', true); // textarea emptied in clone
 
+                // Remove buttons cause none of them will work
+                $postFormClone.find('.js-buttons').empty();
+
                 // Modify HTML
                 $replyForm.html($postFormClone);
                 $(this).text('cancel');
-                //TODO Change Emoji textare target to the current form
-                Emoji.$textarea = $postFormClone.find('textarea');
             }
             else{
                 // Erase form
@@ -259,10 +260,9 @@ var Forum = {
             // Don't increment like for an already liked post
             if ($(this).find('.liked').length == 1)
                 return;
-
             var $likeImg = $(this).children('img');
             var $likeCountEl = $(this).children('.post-like-count');
-            var postId = $(this).data('parentid');
+            var postId = $(this).data('postid');
             var likeCount = parseInt($likeCountEl.text());
 
             // Animate thumb image
@@ -279,6 +279,7 @@ var Forum = {
             }); 
 
             // Add like to database
+            console.log("Liking post "+ postId);
             $.ajax({
                 type: 'POST',
                 url : 'forum.ajax.php',
@@ -523,7 +524,7 @@ var Forum = {
     stopCheckNewForumPost: function(){
         if (!Forum.stopped){
             // Stop calling server every few seconds
-            $('#posts-container').prepend('<pre>Automatic Forum updates have been stopped. Please refresh the page to restart them</pre>');
+            $('#posts-container').prepend('<pre>Something went wrong and automatic Forum updates had to stop. Maybe you lost your internet connection :(. Please refresh the page to restart them.</pre>');
             window.clearInterval(Forum.checkNewForumPostIntervalId);
             Forum.stopped = true;
         }

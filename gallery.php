@@ -10,9 +10,8 @@ addHeader();
 if (!isset($_REQUEST['eventname'])) {
     echo '
     <div class="gallery-header">
-        <strong>Welcome to the Photo Gallery</strong> 
-
-        (Videos can be found on our <a href="youtubevids">Youtube Vids</a> page where the routines are grouped by person or head straight to our <a href="http://www.youtube.com/user/ucdtramp" target="_blank">Youtube Channel</a>)
+        Welcome to the Photo Gallery! Videos can be found on our <a href="youtubevids">Youtube Vids</a> page where the routines are grouped by person. <br>
+        Or you could head straight to our <a href="http://www.youtube.com/user/ucdtramp" target="_blank">Youtube Channel</a>
     </div>';
 
     // Show each year

@@ -22,7 +22,12 @@ for ($year = $yearStart; $year > 4; $year = $year - 1) {
         </a>';
 }
 // Both rows contain all years. Every second on is hidden by css
+// UCDTC takes no responsibility for any scars, emotional or otherwise, that may or may not be caused by the content on this page.
 echo '
+<p>
+    Behold! UCDTC: A History. Here you\'ll find information on each of the competitions we\'ve been to, the results competitors got, and most importantly, the juicy, gossip filled, debauchery ridden <strong>reports</strong> of yonder past events. What\'s also cool is completely random photos will be loaded each time you view this page. You never know what you might see. <small>*Viewer discretion is advised.*</small>
+</p>
+
 <div class="flex-container rotate anticlockwise">'.$years.' </div>
 <div class="timeline"></div>
 <div class="flex-container rotate clockwise">'.$years.'</div>';

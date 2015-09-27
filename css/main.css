@@ -750,11 +750,6 @@ textarea {
     /*font-weight: normal;*/
     /*font-style: italic;*/
 }
-/*Hide stats and push buttons in reply forum*/
-.post-footer .a-link-stats,
-.post-footer .btn-toggle-push {
-    display: none;
-}
 .btn-reply {
     font-size: 85%;
     margin-left: -2em;
