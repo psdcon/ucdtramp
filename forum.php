@@ -299,7 +299,7 @@ addHeader();
 
         // Print a forum post and all its replies
         echo '
-        <div class="col-xs-12 forum-post" id="'. $post['id'] .'">'.
+        <div class="col-xs-12 forum-post">'.
             $postHtml .'
             <div class="post-replies">'.
                 $repliesHtml .'

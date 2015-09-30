@@ -35,15 +35,7 @@ else if ($_POST['action'] == 'newPost'){
     $postTime = time();
 
     // Check for spam
-    if ($forumUser == '' || $forumMessage == '')
-        die(json_encode(array('spam' => 'User and/or message field empty')));
-    foreach ($ipBlacklist as $ip) {
-        if ($clientIp == $ip)
-            die(json_encode(array('spam' => 'Bad ip')));
-    }
-    if (preg_match('%</a>%i', $forumUser) || preg_match('%</a>%i', $forumMessage) || preg_match('%/url%i', $forumUser) || preg_match('%/url%i', $forumMessage)){
-        die(json_encode(array('spam' => 'Spam attempt')));
-    }
+    checkSpam($clientIp, $forumUser, $forumMessage);
 
     // Add post
     $addPostSQL = "INSERT INTO forum_posts (forum, users_forum_id, sender, parent_id, post_time, message, ipaddress) VALUES ($forumId, '$usersForumId', '$forumUser', $parentPostId, $postTime, '$forumMessage', '$clientIp')";
@@ -52,7 +44,8 @@ else if ($_POST['action'] == 'newPost'){
 
     // Saves users name for next time. Lasts for a year
     setcookie("forumUser", $forumUser, (time()+31556926), '/');
-    if ($forumId == 1) notificationEveryone();
+    if ($forumId == 1) 
+        notificationEveryone();
     
     // Return with the id of the post in the db
     $newPostId = mysqli_insert_id($db);
@@ -60,9 +53,14 @@ else if ($_POST['action'] == 'newPost'){
     if (!$newPostResult = mysqli_query($db, $newPostCheckSQL))
         die(json_encode(array('error' => mysqli_error($db))));
 
-    // Send post json obj down
+    // Get post just submitted
     $postsArray = posts2AssocArray($newPostResult);
-    // emailPost($postsArray['forumUser'], $postsArray['forumMessage']);
+    // die(var_dump($postsArray[0]));
+    // Email any committee posts
+    $emailId = ($postsArray[0]['parentPostId'] == 0)? $postsArray[0]['id'] : $postsArray[0]['parentPostId'];
+    emailPost($emailId, $postsArray[0]['forumUser'], $postsArray[0]['forumMessage']);
+
+    // Send formatted post to client
     die(json_encode(array('posts' => $postsArray)));
 }
 else if ($_POST['action'] == 'editPost'){
@@ -76,15 +74,7 @@ else if ($_POST['action'] == 'editPost'){
     $postTime = time();
 
     // Check for spam
-    if ($forumUser == '' || $forumMessage == '')
-        die(json_encode(array('spam' => 'User and/or message field empty')));
-    foreach ($ipBlacklist as $ip) {
-        if ($clientIp == $ip)
-            die(json_encode(array('spam' => 'Bad ip')));
-    }
-    if (preg_match('%</a>%i', $forumUser) || preg_match('%</a>%i', $forumMessage) || preg_match('%/url%i', $forumUser) || preg_match('%/url%i', $forumMessage)){
-        die(json_encode(array('spam' => 'Spam attempt')));
-    }
+    checkSpam($clientIp, $forumUser, $forumMessage);
 
     // Copy previous post to deleted forum
     $backupSQL = "INSERT INTO `forum_posts`(`parent_id`, `forum`, `users_forum_id`, `sender`, `post_time`, `message`, `ipaddress`, `length1`, `length2`)
@@ -141,6 +131,8 @@ function notificationEveryone(){
 
     $subscriptionsQuery = "SELECT `subscriptionId` FROM `forum_subscriptions`";
     $subscriptionsResult =  mysqli_query($db, $subscriptionsQuery);
+    if (mysqli_num_rows($subscriptionsResult) == 0) // Do nothing if no one's subscribed
+        return;
     $subscriptionIds = array();
     while ($row = $subscriptionsResult->fetch_assoc()){
         $subscriptionIds[] = $row['subscriptionId'];
@@ -167,38 +159,67 @@ function sendNotifications($subscriptionIds){
     curl_setopt_array($ch, $curlConfig);
     $response = json_decode(curl_exec($ch), true);
     if ($response == NULL){
+        echo "Couldn't build curl for Push Notifications";
         var_dump(curl_exec($ch));
+        die();
     }
     else if ($response['success'])
         return;
     else // some kind of error
-        return (json_encode($response['results'][0]));
+        die(json_encode($response['results'][0]));
 }
+function checkSpam($clientIp, $forumUser, $forumMessage){
+    global $ipBlacklist; // Give this function access to array above
 
-function emailPost($forumUser, $forumMessage){
-    global $forumId;
-    $deletedForum = 0; $publicForum = 1; $committeeForum = 2;
-
-    if ($forumId == $deletedForum){
-        //$to      = 'psdcon@gmail.com';
-        $subject = 'Deleted Forum Post';        
+    if ($forumUser == '' || $forumMessage == '')
+        die(json_encode(array('spam' => 'User and/or message field empty')));
+    foreach ($ipBlacklist as $ip) {
+        if ($clientIp == $ip)
+            die(json_encode(array('spam' => 'Bad ip')));
     }
-    else if ($forumId == $publicForum){
-        //$to      = 'psdcon@gmail.com';
-        $subject = 'Public Forum Post';
-    } 
-    else if ($forumId == $committeeForum){
-        $to      = 'psdcon@gmail.com';
-        $subject = 'Committee Forum Post';      
+    if (preg_match('%</a>%i', $forumUser) || preg_match('%</a>%i', $forumMessage) || preg_match('%/url%i', $forumUser) || preg_match('%/url%i', $forumMessage)){
+        die(json_encode(array('spam' => 'Spam attempt')));
+    }
+}
+function emailPost($emailId, $forumUser, $forumMessage){
+    global $forumId;
+
+    if ($forumId != 2)
+        return;
+
+    switch ($forumId) {
+        case 0:
+            //$to      = 'psdcon@gmail.com';
+            $subject = 'UCDTC Deleted Forum Post';  
+            break;
+        case 1:
+            //$to      = 'psdcon@gmail.com';
+            $subject = 'UCDTC Public Forum Post';
+            break;
+        case 2:
+            $to      = 'psdcon@gmail.com, colmgalligan@gmail.com, roseanne.b.loco@gmail.com, orlacole@hotmail.com, mheslin8@gmail.com, mquirkebolt@yahoo.ie, emilyrose.farrell94@gmail.com, keith.fay@ucdconnect.ie, nicoletianihad@gmail.com, glasgowtc@gmail.com';
+            $subject = 'UCDTC Committee Forum Post #'.$emailId;
+
+        default:
+            # code...
+            break;
     }
 
     $mailmessage = '
-        <html><head><title>Forum Post</title></head><body><p><strong>
-        '.$post['forumUser'].'</strong>: '.$post['forumMessage'].'
-        </p></body></html>';
+        <html>
+            <head><title>Forum Post</title></head>
+            <body>
+                <p>
+                    <strong>'. $forumUser .'</strong>: 
+                    '. $forumMessage .'
+                </p>
+                <br>
+                <a href="forum/2">Click here to go to the committee forum</a>
+            </body>
+        </html>';
     $headers  = 'MIME-Version: 1.0' . "\r\n";
     $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-    $headers .= 'From: forum@ucdtramp.com' . "\r\n" .'X-Mailer: PHP/' . phpversion();
+    $headers .= 'From: Committee Forum <committee.forum@ucdtramp.com>' . "\r\n" .'X-Mailer: PHP/' . phpversion();
 
     mail($to, $subject, $mailmessage, $headers);
 }

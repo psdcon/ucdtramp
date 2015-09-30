@@ -185,7 +185,27 @@ addHeader();
             <p>'
                 .$coach['description'].'
             </p>
-        </div>';            
+        </div>';
+    }
+    for ($i=0; $i < 8; $i++) { 
+    	$thumbnailSrc = '//ucdtramp.com/images/pages/coaches/mysteryx400.jpg';
+    	$thumbnailSrcset = '//ucdtramp.com/images/pages/coaches/mysteryx100.jpg 100w,
+    	                    //ucdtramp.com/images/pages/coaches/mysteryx200.jpg 200w,
+    	                    //ucdtramp.com/images/pages/coaches/mysteryx400.jpg 400w';
+    	echo '
+    	<div class="coach">
+    	    <p>
+    	        <img class="coach__thumb" data-click="bounceMe" data-numclicks="0" srcset="'.$thumbnailSrcset.'" src="'.$thumbnailSrc.'" alt="Myster">
+    	    </p>
+    	    <p class="coach-details">
+    	        <strong>Name</strong>: Coach Locked<br>
+    	        <strong>Course</strong>: ???<br>
+    	        <strong>Level</strong>: 1<br>
+    	    </p>
+    	    <p>
+    	    	Keep trampolining to find out who this coach is! <strong>#thesuspensewillkillyou</strong>
+    	    </p>
+    	</div>';
     }
 ?>
 </div>

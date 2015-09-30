@@ -176,12 +176,13 @@ var Forum = {
                 data: 'action=newPost'+
                     '&forumId='+ Forum.forumId +
                     '&parentPostId='+ post.parentPostId +
-                    '&forumUser='+ post.forumUser +
-                    '&forumMessage='+ post.forumMessage,
+                    '&forumUser='+ encodeURIComponent(post.forumUser) +
+                    '&forumMessage='+ encodeURIComponent(post.forumMessage),
                 dataType: 'json', // server return type
                 success: function(response){
                     Forum.submittingPost = false;
                     $postBtn.text('Post').prop('disabled', false);
+                    console.log(response);
 
                      if(response.posts){
                         // Update the id of the newest post, reenable checkNewForumPost and add post to page
@@ -343,12 +344,12 @@ var Forum = {
     addPost: function(post){
         // Post is split up because replies dont have the header and footer.
         var postHeaderTemplate = 
-        '<div class="col-xs-12 forum-post" id="'+ post.id +'">';
+        '<div class="col-xs-12 forum-post">';
 
         var postContentTemplate = 
             '<div class="for-hightling">'+
                 '<div class="post-contents">'+
-                    '<div class="post-header">'+
+                    '<div class="post-header" id="'+ post.id +'">'+
                         '<strong class="post-header-name">'+ post.forumUser +'</strong>'+
                         '<small class="post-header-time"> '+
                             '<time datetime="'+ post.htmlDatetime +'" title="'+ post.readableTime +'">'+
@@ -379,23 +380,23 @@ var Forum = {
             '<div class="post-footer">'+
                 '<!-- For reply box -->'+
                 '<button class="btn-reply btn-link" data-click="reply">reply</button>'+
-                '<form action="" class="form-horizontal reply-form" data-postid="'+ post.id +'"></form>'+
+                '<form class="form-horizontal reply-form" data-postid="'+ post.id +'"></form>'+
             '</div>'+
         '</div>';
 
 
         // Add post to page
         var $newPostEl; // keeps a jQuery reference of the new psot in the DOM after the post's been added
-        if (post.parentPostId == '0'){ // TODO: Fix this discrepancy
+        if (post.parentPostId == '0'){ 
             $newPostEl = $(postHeaderTemplate+postContentTemplate+postFooterTemplate);
-            $('#posts-container').prepend($newPostEl); // Add to page
+            $('#posts-container').prepend($newPostEl); // Add to top of page
         }
         else { // When reply, delete reply form.
             $newPostEl = $(postContentTemplate);
-            $('#'+post.parentPostId+' .post-replies').append($newPostEl); // Add to page
+            $('#'+post.parentPostId).parent('.forum-post').children('.post-replies').append($newPostEl); // Add as reply to parent post
         }
 
-        // Start live time updates
+        // Start live time update
         $newPostEl.find('time').timeago();
 
         // Return object reference
@@ -447,16 +448,16 @@ var Forum = {
                     Forum.soundNotification();
 
                     // The magic part...
-                    // Function is called when tab is make active
+                    // Function is called when tab is made active
                     var postInViewHandler = function(){
-                        // Do nothing if this tab is out of focus
+                        // Do nothing if this tab is out of focus and wait till it's active
                         if(!tabVisible())
                             return;
 
                         for(var i=0; i<Forum.unseenPosts.length; i++){
                             var $thisNewPost = Forum.unseenPosts[i];
 
-                            // Post loaded in view
+                            // Post loaded into viewport
                             if (elementInViewport($thisNewPost)){
                                 $thisNewPost.children().first().addClass('fade-highlight');
                                 Forum.unseenPosts.remove($thisNewPost);
@@ -469,7 +470,7 @@ var Forum = {
                                 //     $('.new-post-notification').html('<div class="limit">'+limitMessage+'</div>');
                                 // }
 
-                                // Add post to notification
+                                // Add post to notification popup
                                 var forumUser = $thisNewPost.find('.post-header-name').text();
                                 var $scrollToClick = $('<div>Click to scroll to '+forumUser+'\'s post</div>');
                                 $scrollToClick.on('click', Forum.handlers.scrollToClickHandler($thisNewPost));
@@ -484,10 +485,9 @@ var Forum = {
                             }
                         }
                     };
-                    // Set tab listener. Function has if(tabVisible) because ... eh it should be there
-                    // If tab is open, it will run
-                    postInViewHandler();
-                    tabVisible(postInViewHandler);
+                    
+                    postInViewHandler(); // Run to see if tab is in view
+                    tabVisible(postInViewHandler); // Else set the tab listener and when the tab comes into view, then run
                 }
                 else {
                     // Server error that came down as json

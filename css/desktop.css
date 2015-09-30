@@ -225,6 +225,9 @@ footer img {
 .table--formatinghelpfirst {
     border-bottom-width: 1px;
 }
+.post-replies {
+    margin-left: 2em;
+}
 /***********************************************************
                            GALLERY GRID
 ***********************************************************/

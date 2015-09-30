@@ -154,7 +154,7 @@ function formatPost($post) {
 
 function post2HTML($post){
     return '
-        <div class="post-header"> <!--top bar with name, time and other details. Has bottom border-->
+        <div class="post-header" id="'. $post['id'] .'"> <!--top bar with name, time and other details. Has bottom border-->
             <strong class="post-header-name">'. $post['forumUser'] .'</strong>
             <small class="post-header-time">
                 <time datetime="'. $post['htmlDatetime'] .'" title="'. $post['readableTime'] .'">
