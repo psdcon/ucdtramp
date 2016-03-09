@@ -32,6 +32,9 @@ if(isset($_COOKIE['user'])){ // checks for users cookie
         }
     }
 }
+// Theme stuff
+$theme = false;
+// $theme = "christmas";
 
 function addHeader() {
     // These variables are used in the header.php file. 
@@ -39,14 +42,16 @@ function addHeader() {
     global $title,
            $description,
            $userPosition,
-           $loggedIn;
+           $loggedIn,
+           $theme;
 
     $title = ($title == 'UCD Trampoline Club')? $title: 'UCDTC '.$title;
     include('includes/header.php');
 }
 
 function addFooter() {
-    global $db; // db connection is closed in footer
+    global $db, // db connection is closed in footer
+           $theme; 
     include('includes/footer.php');
 }
 
@@ -91,94 +96,6 @@ function decode_ip($int_ip){
     return hexdec($hexipbang[0]). '.'.hexdec($hexipbang[1]).'.'.hexdec($hexipbang[2]).'.'.hexdec($hexipbang[3]);
 }
 
-// Used in forum.php and forum.ajax.php
-function posts2AssocArray($newPostResult){
-    $postsArray = [];
-    // $usersForumId = $_COOKIE['usersForumId'];
-    while ($post = mysqli_fetch_array($newPostResult)) {
-        $postsArray[] = formatPost($post);
-    }
-
-    return $postsArray;
-}
-
-function formatPost($post) {
-    global $db, $userPosition, $forumId, $usersForumId;
-
-    $postId = $post['id'];
-    // Times
-    $htmlDatetime = date('c', $post['post_time']);
-    $readableTime = date('D, d M Y H:i:s', $post['post_time']);
-    $niceTime = nicetime($post['post_time']);
-    // User and message
-    $forumUser = html_entity_decode($post['sender']);
-    $forumUser = smilify($forumUser, $forumUser);
-    $forumMessage = URL2link(smilify(nl2br(html_entity_decode($post['message'])), $forumUser));
-    // ip address, delete, edit button
-    $headerActions = ($userPosition == 'Webmaster')? 
-        decode_ip($post['ipaddress']).' 
-        <a class="forum-post-delete" style="color:black;" title="Delete post" href="forum/delete/'.$postId.'">
-            <i class="fa fa-trash-o"></i> <span class="sr-only">Delete</span>
-        </a>' : '';
-    if ($post['users_forum_id'] == $usersForumId || $userPosition == 'Webmaster')
-        $headerActions .= '
-            <a class="forum-post-edit" style="color:black;" title="Edit post" href="forum/edit/'.$postId.'">
-                <i class="fa fa-pencil"></i> <span class="sr-only">Edit</span>
-            </a>';
-    // Likes
-    $likeCount = mysqli_query($db, "SELECT count(1) c FROM forum_plusone WHERE message = $postId LIMIT 1");
-    $likeCount = mysqli_fetch_array($likeCount)['c'];
-    if (mysqli_num_rows(mysqli_query($db, "SELECT 1 FROM forum_plusone WHERE message = $postId AND cookie = '$usersForumId' LIMIT 1"))){
-        $likedClass = 'liked';
-        $likeTitle = 'Approved';
-    }
-    else {
-        $likedClass = 'not-liked';
-        $likeTitle = 'Approve Post';
-    }
-
-    return array(
-        'id' => $post['id'],
-        'parentPostId' => $post['parent_id'],
-        'htmlDatetime' => $htmlDatetime,
-        'readableTime' => $readableTime,
-        'niceTime' => $niceTime,
-        'forumUser' => $forumUser,
-        'forumMessage' => $forumMessage,
-        'headerActions' => $headerActions,
-        'likeCount' => $likeCount,
-        'likedClass' => $likedClass,
-        'likeTitle' => $likeTitle
-    );
-}
-
-function post2HTML($post){
-    return '
-        <div class="post-header" id="'. $post['id'] .'"> <!--top bar with name, time and other details. Has bottom border-->
-            <strong class="post-header-name">'. $post['forumUser'] .'</strong>
-            <small class="post-header-time">
-                <time datetime="'. $post['htmlDatetime'] .'" title="'. $post['readableTime'] .'">
-                    '. $post['niceTime'] .'
-                </time>
-            </small>
-
-            <span class="post-header-actions"> 
-                '. $post['headerActions'] .'
-            </span>
-        </div>
-        <div class="post-message clearfix">
-            '. $post['forumMessage'] .'
-
-            <!-- Like button -->
-            <button type="button" class="btn post-like-btn" title="'. $post['likeTitle'] .'" data-action="likeButton" data-postid="'. $post['id'] .'">
-                <img class="post-like-img '. $post['likedClass'] .'" src="images/pages/forum/like.svg" alt="Like">
-                <span class="post-like-count">
-                    '. $post['likeCount'] .'
-                </span>
-            </button>
-        </div>';
-}
-
 function seconds_to_time($secs){
     $dt = new DateTime('@' . $secs, new DateTimeZone('UTC'));
     $time = array('days'    => $dt->format('z'),
@@ -209,8 +126,10 @@ function URL2link($text){
     
     // If url wasnt already recognised as a youtube link or an image, make it a clickable link        
     $URL_reg='((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)';
-    if(!preg_match('!src="'.$URL_reg.'!i',$text)) //if a url is not already part of a src (preceded by src=") then make it an anchor
+    if(!preg_match('!src="'.$URL_reg.'!i',$text)){ //if a url is not already part of a src (preceded by src=") then make it an anchor
         $text = preg_replace('!'.$URL_reg.'!i', '<a target="_blank" href="$1">$1</a>', $text);
+        // TODO CHeck for https? and add if not there
+    }
     
     return $text;
 }
@@ -270,6 +189,7 @@ $ucdtcSmilies = array(
     array(':tim:', 'normal-smilies/tim.jpg', 'Tim'),
     array(':hearttim:', 'normal-smilies/hearttim.png', 'Hearttim'),
     array(':whydontyouloveusvincent:', 'normal-smilies/whydontyouloveusvincent.jpg', 'Why dont you love us vincent'),
+    array(':lolol:', 'normal-smilies/LOL.gif', 'Hiiiiiiiiiiiilarious'),
 );
 $ucdtcSmiliesHalloween = array(
     // Halloween smilies
@@ -350,15 +270,38 @@ function smilify($text, $poster) {
     $text = preg_replace('/D eirdre/i', 'BJ', $text);
     $text = preg_replace('/D.eirdre/i', 'BJ', $text);
     $text = preg_replace('/deirdre/i', 'BJ', $text);
+    $text = preg_replace('/deirdre/i', 'BJ', $text);
     
     $text = preg_replace('/Cormac H/i', 'Norman', $text);
     
+    $text = preg_replace('/Hannah the Hun/i', 'Attilla the Hun', $text);
+    
+
+    // Change colour of Orla's name
+    //$colors = ['#FF0000','#0000FF','#32CD32','#FF1493','#C71585','#FF4500','#COCOCO'];
+    //$text = preg_replace('/Orla/i', '<span style="color:'.$colors[date("N", time())-1].'">Orla</span>', $text);
+
+    // Hiding Committee Profiles
+    $glasgowsMessage = "I'm a stupid moron with an ugly face and a big butt and my butt smells and I, uh, like to kiss my own butt";
+    // $text = preg_replace('/rosemanbolhand/i', $glasgowsMessage, $text);
+    $text = preg_replace('/colmwillbringshameonhisfamily/i', $glasgowsMessage, $text);
+    $text = preg_replace('/nicoletrinidadandtobago/i', $glasgowsMessage, $text);
+    $text = preg_replace('/colecolemanthecoalman/i', $glasgowsMessage, $text);
+    $text = preg_replace('/longfordmorelikeshortford/i', $glasgowsMessage, $text);
+    $text = preg_replace('/mariannedoesntacuallysuckexceptshedoes/i', $glasgowsMessage, $text);
+    $text = preg_replace('/https:\/\/ucdtramp.com\/page\/justletgoalreadyoldman/i', $glasgowsMessage, $text);
+    
+    $text = preg_replace('/:colmstar:/i', '<a href="page/colmwillbringshameonhisfamily"><img title="not your averge joe soap" class="forum-original-emoji" src="images/emoji/normal-smilies/pstar.gif" alt="Purple star"></a>', $text);
+
     // ForumUser-only replacements, not site-wide
     if($poster == 'Sinead'){$text = preg_replace('/Sinead/i', 'Flaps', $text);}
     
     if($poster == 'Jordan'){$text = preg_replace('/Jordan/i', 'Obama', $text);}
     if($poster == 'J o r d a n'){$text = preg_replace('/J o r d a n/i', 'Obama', $text);}
     if($poster == 'J_o_r_d_a_n'){$text = preg_replace('/J_o_r_d_a_n/i', 'Obama', $text);}
+    
+
+    if($poster == 'Colm'){$text = preg_replace('/C:pstar:o:pstar:l:pstar:m/i', 'Obama', $text);}
 
     // Smiley face image replacements from the array defined above
     for ($i = 0; $i < count($ucdtcSmilies); $i++){

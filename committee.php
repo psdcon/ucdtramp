@@ -51,7 +51,7 @@ addHeader();
         <h4><a href="manage_members.php?action=show&show=all">Members Database</a></h4>
         <ul style="display:inline-block">
             <li><strong>Database</strong></li>
-            <li><a href="manage_members.php?action=show&show=all">All Membs</a></li>
+            <li><a href="manage_members.php?action=show&show=all">All Members</a></li>
             <li><a href="manage_members.php?action=show&show=committee">Committee</a></li>
             <li><a href="manage_members.php?action=show&show=coach">Coaches</a></li>
             <li><a href="manage_members.php?action=show&show=judge">Judges</a></li>
@@ -59,7 +59,7 @@ addHeader();
 
         <ul style="display:inline-block">
             <li><strong>Email</strong></li>
-            <li><a href="manage_members.php?action=Email&recipients=everyone">All Membs</a></li>
+            <li><a href="manage_members.php?action=Email&recipients=everyone">All Members</a></li>
             <li><a href="manage_members.php?action=Email&recipients=committee">Committee</a></li>
             <li><a href="manage_members.php?action=Email&recipients=coaches">Coaches</a></li>
             <li><a href="manage_members.php?action=Email&recipients=judges">Judges</a></li>
@@ -226,6 +226,7 @@ var Notice = {
         });
     },
     savePage: function(){
+        Notice.preview.html(Notice.editor.val());
         $.ajax({
             type: 'POST',
             url : 'page.php',
@@ -234,7 +235,7 @@ var Notice = {
                  '&pageurl='+Notice.preview.data('pageid'),
             dataType: 'text', // server return type
             success: function(response){
-                if (response === ''){
+                if (response.trim() === ''){
                     Notice.resetNotice();
                 }
                 else{

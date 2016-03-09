@@ -145,18 +145,18 @@ switch ($action) {
         
                 <div class="col-xs-4 col-md-4">
                     <select class="form-control" name="dobmonth" onChange="validDate(document.memberform.dobday,document.memberform.dobmonth,document.memberform.dobyear)">
-                        <option value="01">January</option>
-                        <option value="02">February</option>
-                        <option value="03">March</option>
-                        <option value="04">April</option>
-                        <option value="05">May</option>
-                        <option value="06">June</option>
-                        <option value="07">July</option>
-                        <option value="08">August</option>
-                        <option value="09">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
+                        <option value="01">1 January</option>
+                        <option value="02">2 February</option>
+                        <option value="03">3 March</option>
+                        <option value="04">4 April</option>
+                        <option value="05">5 May</option>
+                        <option value="06">6 June</option>
+                        <option value="07">7 July</option>
+                        <option value="08">8 August</option>
+                        <option value="09">9 September</option>
+                        <option value="10">10 October</option>
+                        <option value="11">11 November</option>
+                        <option value="12">12 December</option>
                     </select>
                 </div>
                 
@@ -274,18 +274,18 @@ switch ($action) {
             
                 <div class="col-xs-4">
                     <select class="form-control" name="dobmonth" onChange="validDate(document.memberform.dobday,document.memberform.dobmonth,document.memberform.dobyear)">
-                        <option value='01' <?= ((1 == $dob_month) ? ' selected' : '') ?>>January</option>
-                        <option value='02' <?= ((2 == $dob_month) ? ' selected' : '') ?>>February</option>
-                        <option value='03' <?= ((3 == $dob_month) ? ' selected' : '') ?>>March</option>
-                        <option value='04' <?= ((4 == $dob_month) ? ' selected' : '') ?>>April</option>
-                        <option value='05' <?= ((5 == $dob_month) ? ' selected' : '') ?>>May</option>
-                        <option value='06' <?= ((6 == $dob_month) ? ' selected' : '') ?>>June</option>
-                        <option value='07' <?= ((7 == $dob_month) ? ' selected' : '') ?>>July</option>
-                        <option value='08' <?= ((8 == $dob_month) ? ' selected' : '') ?>>August</option>
-                        <option value='09' <?= ((9 == $dob_month) ? ' selected' : '') ?>>September</option>
-                        <option value='10' <?= ((10 == $dob_month) ? ' selected' : '') ?>>October</option>
-                        <option value='11' <?= ((11 == $dob_month) ? ' selected' : '') ?>>November</option>
-                        <option value='12' <?= ((12 == $dob_month) ? ' selected' : '') ?>>December</option>
+                        <option value='01' <?= ((1 == $dob_month) ? ' selected' : '') ?>>1 January</option>
+                        <option value='02' <?= ((2 == $dob_month) ? ' selected' : '') ?>>2 February</option>
+                        <option value='03' <?= ((3 == $dob_month) ? ' selected' : '') ?>>3 March</option>
+                        <option value='04' <?= ((4 == $dob_month) ? ' selected' : '') ?>>4 April</option>
+                        <option value='05' <?= ((5 == $dob_month) ? ' selected' : '') ?>>5 May</option>
+                        <option value='06' <?= ((6 == $dob_month) ? ' selected' : '') ?>>6 June</option>
+                        <option value='07' <?= ((7 == $dob_month) ? ' selected' : '') ?>>7 July</option>
+                        <option value='08' <?= ((8 == $dob_month) ? ' selected' : '') ?>>8 August</option>
+                        <option value='09' <?= ((9 == $dob_month) ? ' selected' : '') ?>>9 September</option>
+                        <option value='10' <?= ((10 == $dob_month) ? ' selected' : '') ?>>10 October</option>
+                        <option value='11' <?= ((11 == $dob_month) ? ' selected' : '') ?>>11 November</option>
+                        <option value='12' <?= ((12 == $dob_month) ? ' selected' : '') ?>>12 December</option>
                     </select>
                 </div>
                 
@@ -461,7 +461,7 @@ switch ($action) {
             </div>
         </p>
 
-        <h3><?= $pageTitle ?> <?= mysqli_num_rows($members) ?> members)</h3>
+        <h3><?= $pageTitle ?> (<?= mysqli_num_rows($members) ?> members)</h3>
 
         <style>
             .table {
@@ -483,7 +483,7 @@ switch ($action) {
             <table class="table table-striped">
                 <thead style="position: -webkit-sticky; position: -moz-sticky; position: -ms-sticky; position: -o-sticky; position: sticky; top: 0;">
                     <tr>
-                        <td title="Edit/Delete" style="font-size:1em;">
+                        <td title="Edit/Delete" style="font-size:1em;text-align:center;">
                             <i class="fa fa-cog"></i>
                         </td>
                         <td>
@@ -495,6 +495,16 @@ switch ($action) {
                             Name <br>
                             <a href="manage_members.php?action=show&show=<?= $show; ?>&field=firstname&order=ASC&year=<?= $year ?>"><i <?= ($field == 'firstname' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
                             <a href="manage_members.php?action=show&show=<?= $show; ?>&field=firstname&order=DESC&year=<?= $year ?>"><i <?= ($field == 'firstname' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                        </td>                        
+                        <td>
+                            Email <br>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=ASC&year=<?= $year ?>"><i <?= ($field == 'email' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=DESC&year=<?= $year ?>"><i <?= ($field == 'email' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
+                        </td>
+                        <td>
+                            Mobile Phone <br>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=ASC&year=<?= $year ?>"><i <?= ($field == 'mobile' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
+                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=DESC&year=<?= $year ?>"><i <?= ($field == 'mobile' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             D.O.B. <br>
@@ -525,21 +535,11 @@ switch ($action) {
                             Injuries <br>
                             <a href="manage_members.php?action=show&show=<?= $show; ?>&field=injuries&order=ASC&year=<?= $year ?>"><i <?= ($field == 'injuries' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
                             <a href="manage_members.php?action=show&show=<?= $show; ?>&field=injuries&order=DESC&year=<?= $year ?>"><i <?= ($field == 'injuries' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
-                        </td>                    
-                        <td>
-                            Mobile Phone <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=ASC&year=<?= $year ?>"><i <?= ($field == 'mobile' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=mobile&order=DESC&year=<?= $year ?>"><i <?= ($field == 'mobile' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Home Phone <br>
                             <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_phone&order=ASC&year=<?= $year ?>"><i <?= ($field == 'home_phone' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
                             <a href="manage_members.php?action=show&show=<?= $show; ?>&field=home_phone&order=DESC&year=<?= $year ?>"><i <?= ($field == 'home_phone' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
-                        </td>
-                        <td>
-                            Email <br>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=ASC&year=<?= $year ?>"><i <?= ($field == 'email' && $order == 'ASC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-up"></i></a>
-                            <a href="manage_members.php?action=show&show=<?= $show; ?>&field=email&order=DESC&year=<?= $year ?>"><i <?= ($field == 'email' && $order == 'DESC') ? 'style="color:red"' : ''; ?> class="fa fa-angle-down"></i></a>
                         </td>
                         <td>
                             Coach <br>
@@ -571,34 +571,41 @@ switch ($action) {
                 <tbody>
                 <?php
                 while ($current_member = mysqli_fetch_array($members)) {
-                    $current_member['formatted_dob'] = date("j/m/y", $current_member['dob']);
+
+                    if (strlen($current_member['mobile']) == 9 && $current_member['mobile'][0] == "8"){
+                        $current_member['mobile']="0".$current_member['mobile'];
+                    }
+
+                    $current_member['formatted_dob'] = date("d/m/Y", $current_member['dob']);
                     echo "
                     <tr>";
                     
-                    if ($year != $thisyear) //should not be able to delete or edit
+                    if ($year != $thisyear) //should not be able to delete or edit old members
                         echo "
                         <td>
                             <a href=\"manage_members.php?action=Copy&year=".$year."&id=".$current_member['id']."\" title=\"Copy to this year\"><i class='fa fa-files-o'></i></a>";
                     else
                         echo "
-                        <td><a href=\"manage_members.php?id=".$current_member['id']."&action=Edit\" title=\"Edit\"><i class='fa fa-pencil'></i></a>
-                            <a href=\"manage_members.php?id=".$current_member['id']."&action=Delete\" onClick=\"return areYouSure();\"title=\"Delete\" class=\"delete\"><i class='fa fa-trash-o'></i></a></td>";
+                        <td>
+                            <a href=\"manage_members.php?id=".$current_member['id']."&action=Edit\" title=\"Edit\"><i class='fa fa-pencil'></i></a>
+                            <a href=\"manage_members.php?id=".$current_member['id']."&action=Delete\" onClick=\"return areYouSure();\"title=\"Delete\" class=\"delete\"><i class='fa fa-trash-o'></i></a>
+                        </td>";
                     
                     echo "
                         <td>".$current_member['membership_number']."</td>
                         <td>".$current_member['firstname']." ".$current_member['lastname']."</td>
+                        <td>".$current_member['email']."</td>
+                        <td>".$current_member['mobile']."</td>
                         <td>".$current_member['formatted_dob']."</td>
                         <td>".sprintf("%08d", $current_member['student_number'])."</td>
                         <td>".$current_member['home_address']."</td>
                         <td>".$current_member['term_address']."</td>
                         <td>".$current_member['experience']."</td>
                         <td>".$current_member['injuries']."</td>
-                        <td>".sprintf("%0".(strlen($current_member['mobile']) + 1)."s", $current_member['mobile'])."</td>
-                        <td>".sprintf("%0".(strlen($current_member['home_phone']) + 1)."s", $current_member['home_phone'])."</td>
-                        <td>".$current_member['email']."</td>
-                        <td>".($current_member['mailinglist'] == 1 ? 'Yes' : 'No')."</td>
+                        <td>".$current_member['home_phone']."</td>
                         <td>".($current_member['coach'] == 1 ? 'Yes' : 'No')."</td>
                         <td>".($current_member['judge'] == 1 ? 'Yes' : 'No')."</td>
+                        <td>".($current_member['mailinglist'] == 1 ? 'Yes' : 'No')."</td>
                         <td>".$current_member['faculty']."</td>
                         <td>".$current_member['stage']."</td>
                     </tr>";

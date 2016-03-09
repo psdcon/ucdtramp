@@ -1,7 +1,7 @@
 <?php
 include_once 'includes/functions.php';
 
-$jsonFile = 'dist/js/youtube.json';
+$jsonFile = 'js/youtube.json';
 if (isset($_POST['action']) && $_POST['action'] == 'saveJson'){
     $json = $_POST['json'];
     file_put_contents($jsonFile, $json);
@@ -27,7 +27,7 @@ if (isset($_GET['updateVideoList'])){
     <pre class="status">Loading....</pre>
     <div class="html-container"></div>
 
-    <script src="dist/js/youtubeapi.js"></script>
+    <script src="js/youtubeapi.js"></script>
     <script src="https://apis.google.com/js/client.js?onload=googleApiClientReady"></script>
 
     <?php
@@ -57,6 +57,9 @@ else {
     }
 
     $json = json_decode(file_get_contents($jsonFile), true);
+    if ($json == null){
+    	echo "JSON Decode failed. Error in youtube.json file";
+    }
     // Move the synchro and msc vids to the bottom of the page
     $synchroVids = $json['Synchro'];
     $mscVids = $json['Msc'];
@@ -70,13 +73,14 @@ else {
     }
 
     $nameCount = 0; $listOfNames='';
+
     foreach ($json as $name => $vidsArray) {
         if ($vidsArray[0]['year'] == '2006')
             continue;
         
         $listOfNames .= '<a href="youtubevids#'.name2IdLink($name).'">'.$name.'</a>';
-
     }
+
     echo '
     <style>
         #allDeNames a {
@@ -90,6 +94,7 @@ else {
     <div class="collapse well clearfix" id="allDeNames">
         '.$listOfNames.'
     </div>';
+
 
     // Go through each person
     foreach ($json as $name => $vidsArray) {

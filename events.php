@@ -1,7 +1,7 @@
 <?php
 include_once 'includes/functions.php';
 $title = 'Upcoming and Past Events';
-$description = "Find infomation about our upcoming events and see the Reports from past competitions and trips";
+$description = "Infomation on upcoming events as well as reports from past competitions and trips";
 addHeader();
 
 // Pads year with 0 if necessary
@@ -25,7 +25,7 @@ for ($year = $yearStart; $year > 4; $year = $year - 1) {
 // UCDTC takes no responsibility for any scars, emotional or otherwise, that may or may not be caused by the content on this page.
 echo '
 <p>
-    Behold! UCDTC: A History. Here you\'ll find information on each of the competitions we\'ve been to, the results competitors got, and most importantly, the juicy, gossip filled, debauchery ridden <strong>reports</strong> of yonder past events. What\'s also cool is completely random photos will be loaded each time you view this page. You never know what you might see. <small>*Viewer discretion is advised.*</small>
+    Behold! All the old things. Here you\'ll find information on each of the competitions we\'ve been to, the results competitors got, and most importantly, the juicy, gossip filled, debauchery ridden <strong>reports</strong> of yonder past events. What\'s also cool is completely random photos will be loaded each time you view this page. You never know what you might see. <small>*Viewer discretion is advised.*</small>
 </p>
 
 <div class="flex-container rotate anticlockwise">'.$years.' </div>
@@ -67,32 +67,37 @@ for ($year = $yearStart; $year > 3; $year--) {
     // Get thumbnails for each event
     // Get the photo year details
     $photoHtml = '';
-    $photoYear = mysqli_query($db, "SELECT `id` FROM `photo_years` WHERE `name` = '$pageYear' LIMIT 1"); 
-    $photoYearId = mysqli_fetch_array($photoYear, MYSQLI_ASSOC)['id'];
-    // Get the events in that year
-    $eventsDetails = mysqli_query($db, "SELECT * FROM `photo_events` WHERE `category` = $photoYearId ORDER BY `id` DESC");
-    while ($thisEvent = mysqli_fetch_array($eventsDetails, MYSQLI_ASSOC)) {
-        $eventId = $thisEvent['id'];
-        $eventFolder = htmlentities($thisEvent['filename']);
+    $photoYear = mysqli_query($db, "SELECT `id` FROM `photo_years` WHERE `name` = '$pageYear' LIMIT 1");
+    if (mysqli_num_rows($photoYear) != 0){
+	    $photoYearId = mysqli_fetch_array($photoYear, MYSQLI_ASSOC)['id'];
+	    // Get the events in that year
+	    $eventsDetails = mysqli_query($db, "SELECT * FROM `photo_events` WHERE `category` = $photoYearId ORDER BY `id` DESC");
+	    while ($thisEvent = mysqli_fetch_array($eventsDetails, MYSQLI_ASSOC)) {
+	        $eventId = $thisEvent['id'];
+	        $eventFolder = htmlentities($thisEvent['filename']);
 
-        // Get a random photo from each event
-        $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photos` WHERE `event` = $eventId"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
-        $thumbnailSQL = "SELECT id,thumbnail FROM `photos` WHERE `event` = $eventId AND `id` >= ($randomIdSQL) ORDER BY `id` LIMIT 1";
-        $thumbnail = mysqli_fetch_array(mysqli_query($db, $thumbnailSQL), MYSQLI_ASSOC);
-        
-        $thumbnailId = $thumbnail['id']-1;
-        $thumbnailName = rawurlencode($thumbnail['thumbnail']);
-        $thumbnailURL = "//ucdtramp.com/photos/$eventFolder/thumbnails/$thumbnailName";
-        $galleryLink =  "gallery/$eventFolder/$thumbnailId";
+	        // Get a random photo from each event
+	        $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photos` WHERE `event` = $eventId"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
+	        $thumbnailSQL = "SELECT id,thumbnail FROM `photos` WHERE `event` = $eventId AND `id` >= ($randomIdSQL) ORDER BY `id` LIMIT 1";
+	        $thumbnail = mysqli_fetch_array(mysqli_query($db, $thumbnailSQL), MYSQLI_ASSOC);
+	        
+	        $thumbnailId = $thumbnail['id']-1;
+	        $thumbnailName = rawurlencode($thumbnail['thumbnail']);
+	        $thumbnailURL = "//ucdtramp.com/photos/$eventFolder/thumbnails/$thumbnailName";
+	        $galleryLink =  "gallery/$eventFolder/$thumbnailId";
 
-        // Save the html for each image
-        $photoHtml .= '
-        <a class="event-thumbnail-link nobreak" href="'.$galleryLink.'">       
-            <img class="event-thumbnail-image" src="'.$thumbnailURL.'" alt="Thumbnail">
-            <span class="event-thumbnail-caption">'.
-                $thisEvent['name'].'
-            </span>
-        </a>';
+	        // Save the html for each image
+	        $photoHtml .= '
+	        <a class="event-thumbnail-link nobreak" href="'.$galleryLink.'">       
+	            <img class="event-thumbnail-image" src="'.$thumbnailURL.'" alt="Thumbnail">
+	            <span class="event-thumbnail-caption">'.
+	                $thisEvent['name'].'
+	            </span>
+	        </a>';
+	    }
+    }
+    else {
+    	$photoHtml = "<strong>No photos yet this year :(</strong>";
     }
 
     // Spit out HTML for each year

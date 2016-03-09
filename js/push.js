@@ -184,9 +184,9 @@ var Push = {
         });
     },
     log: function (str, err) {
-        console.log(str, err);
+        console.log(str+' "'+err+'"');
 
-        var message = (typeof err == "undefined")? '<br><strong>Sorry!</strong> ' + str : '<br>' + str + ': ' + err ;
+        var message = (typeof err == "undefined")? '<br><strong>Error!</strong> ' + str : '<br><strong>Error!</strong> ' + str + ': ' + err ;
         this.pushError.innerHTML = this.pushError.innerHTML + message;
     },
     sendSubscriptionToServer: function(subscription) {
@@ -211,9 +211,9 @@ var Push = {
         }).then(function(response) {
             // No response
             return (response.text());
-        }).then(function(text) {  
+        }).then(function(text) {
             // Request successful
-            if (text !== '')
+            if (text.trim() !== '')
                 Push.log('Recieved unexpected message from server', text);
         }).catch(function(err) {
             // Error :(
@@ -246,7 +246,7 @@ Push.init();
 
 // Awkwardly stuck-in-down-here test for a push notification
 $('.btn-send-me-push').click(function(){
-    console.log("Sending push: "+Push.subscriptionId);
+    console.log("Sending test push: "+Push.subscriptionId);
     $.ajax({
         type: 'POST',
         url : 'forum.ajax.php',
@@ -255,7 +255,7 @@ $('.btn-send-me-push').click(function(){
         dataType: 'text', // server return type
         success: function(response){
             if (response !== '')
-                Push.log('Test failed', response);
+                Push.log('Sorry. Test failed', response);
         }
     });
 });

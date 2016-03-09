@@ -1,0 +1,10 @@
+[05-Jul-2015 09:01:06 America/Chicago] PHP Warning:  mysqli_connect(): (28000/1045): Access denied for user 'root'@'localhost' (using password: NO) in /home1/ucdtramp/public_html/tt/includes/db.php on line 2
+[05-Jul-2015 09:01:06 America/Chicago] PHP Warning:  mysqli_error() expects parameter 1 to be mysqli, boolean given in /home1/ucdtramp/public_html/tt/includes/db.php on line 2
+[05-Jul-2015 09:07:23 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:07:23 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:07:23 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:07:23 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:09:37 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:09:37 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:09:37 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40
+[05-Jul-2015 09:09:37 America/Chicago] PHP Warning:  mysqli_fetch_array() expects parameter 1 to be mysqli_result, boolean given in /home1/ucdtramp/public_html/tt/pages/browse.php on line 40

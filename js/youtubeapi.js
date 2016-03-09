@@ -195,7 +195,7 @@ handleVideoPlaylist = function(){
 };
 
 function saveJson(json){
-    json = JSON.stringify(json);
+    json = encodeURIComponent(JSON.stringify(json));
     $.ajax({
         type: 'POST',
         url : 'youtubevids.php',

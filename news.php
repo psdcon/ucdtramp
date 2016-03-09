@@ -6,13 +6,17 @@ Why not drop us a post on the Forum or say hi to Ask a Tramp? (Don\'t say hi to 
 addHeader();
 ?>
     <div class="row full-width gallery js-flickity" data-flickity-options='{ "setGallerySize": false, "autoPlay": 5000, "wrapAround": true }'>
-		
-        <!-- <div class="gallery-cell">
-            <div class="slider-caption slider-transition">ISTO 2015! I think it was in Cork</div>
-            <img src="//ucdtramp.com/photos/isto1415/image019.jpg" alt="ISTO 1415" />
-        </div> -->
+        
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">We went to Edinburgh, again. SSTO 2015</div>
+            <div class="slider-caption slider-transition">Freshers Night like! Freshers representin'</div>
+            <img src="https://ucdtramp.com/photos/freshersnight1516/freshersnight1415032.jpg" alt="ISTO 1415" />
+        </div>
+        <div class="gallery-cell">
+            <div class="slider-caption slider-transition">ISTO 2015! It was in Cork of all places</div>
+            <img src="//ucdtramp.com/photos/isto1415/image019.jpg" alt="ISTO 1415" />
+        </div>
+        <div class="gallery-cell">
+            <div class="slider-caption slider-transition">We went to Edinburgh, it was class. SSTO 2015</div>
             <img src="//ucdtramp.com/photos/ssto1415/preview/ssto1415 (Original).jpg" alt="SSTO 1415" />
         </div>
         <div class="gallery-cell">
@@ -20,26 +24,30 @@ addHeader();
             <img src="//ucdtramp.com/photos/christmasfunday1415/preview/christmasfunday1415 (Original).jpg" alt="christmasfunday1415" />
         </div>
         <div class="gallery-cell">
+            <div class="slider-caption slider-transition">Intervarsities Winners for the 5th year in a row. Not a repeat, not a threepeat, not a 4peat but....</div>
+            <img src="//ucdtramp.com/images/front_slider/iv5.jpg" alt="intervarsities1516" />
+        </div>
+    <!--     <div class="gallery-cell">
+            <div class="slider-caption slider-transition">Who's in the house? In-house in the house</div>
+            <img src="//ucdtramp.com/photos/inhouse1415/preview/inhouse1415 (Original).jpg" alt="inhouse1415" />
+        </div>
+        <div class="gallery-cell">
+            <div class="slider-caption slider-transition">Cavan. Madness. Unadulterated madness.</div>
+            <img src="//ucdtramp.com/photos/cavan1415/cavan_179.jpg" alt="cavan_179" />
+        </div>
+        <div class="gallery-cell">
             <div class="slider-caption slider-transition">Intervarsities Winners for the 4th year in a row! We dont like to brag but...</div>
             <img src="//ucdtramp.com/images/front_slider/intervs1415.jpg" alt="intervarsities1415" />
         </div>
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">Who was in the house? In-house was in the house</div>
-            <img src="//ucdtramp.com/photos/inhouse1415/preview/inhouse1415 (Original).jpg" alt="inhouse1415" />
-        </div>
-        <div class="gallery-cell">
-            <div class="slider-caption slider-transition">Cavan. That was awhile ago...</div>
-            <img src="//ucdtramp.com/photos/cavan1415/cavan_179.jpg" alt="cavan_179" />
-        </div>
-        <div class="gallery-cell">
-            <div class="slider-caption slider-transition">Tramp night. We all got shitfaced. The night delievered</div>
+            <div class="slider-caption slider-transition">Tramp night. We all got shitfaced. The night delievered.</div>
             <img src="//ucdtramp.com/photos/trampnight1415/preview/trampnight1415 (Original).jpg" alt="cavan_179" />
         </div>
         <div class="gallery-cell">
-            <div class="slider-caption slider-transition">I wasn't at this but it looked fun. Mind, Body + Soul. Do yoga! Who's that freakishly tall dude?</div>
+            <div class="slider-caption slider-transition">I wasn't at this but it looked fun. Mind, Body + Soul. Do yoga!</div>
             <img src="//ucdtramp.com/photos/mindbodysoul1415/mindbodysoul1415_26%20.jpg" alt="cavan_179" />
         </div>
-
+ -->
     </div>
     <hr class="hidden-xs">    
 
@@ -59,8 +67,8 @@ addHeader();
 
                     <p>
                         <strong>Gymnastics</strong> <br>
-                        Monday 1pm - 3pm <br>
-                        Thursday 1pm - 3pm <br>
+                        Tuesdat 12pm - 2pm <br>
+                        Thursday 12pm - 2pm <br>
                         Fridays 12pm - 2pm <br>
                         <a href="https://www.facebook.com/groups/773175236080856/">Join the fb group here</a>
                     </p>
@@ -72,22 +80,15 @@ addHeader();
                 <div class="col-xs-12 col-sm-6">
                     <h4><strong>Upcoming events</strong></h4>
 
-                    <p>	
-                    	<strong>September</strong> <br>
-                        Freshers Night - 30th <br>
-
-                        <strong>October</strong> <br>
-                        Cavan Weekend - 23rd-25th <br>
-
+                    <p> 
                         <strong>November</strong> <br>
                         In House Comp - 7th  <br>
-                        Christmas fun day - 26th <br>
-                        Intervarsities 27th-29th <br>
+                        Intervarsities 27th-29th <br>                                                                       <strong>December</strong> <br>                                              Christmas fun day - 3rd <br>
                     </p>
                          
                     <p>
                         Any questions or suggestions,<br>
-                        talk to <a href="https://ucdtramp.com/page/contact">Orla</a>.
+                        talk to <a href="https://ucdtramp.com/page/contact"><?= smilify('Orla',NULL) ?></a>.
                     </p>
                 </div>
 
@@ -166,7 +167,7 @@ addHeader();
                 Before we begin I'd like to addresss a few FAQs: <br>
                 <em><strong>No</strong></em>, we don't just jump up and down on a trampoline. <br>
                 <em><strong>Yes</strong></em>, you can join with no experience. <br>
-                <em><strong>No</strong></em>, not all men in this sport are gay. (I'm not kidding) <br>
+                <em><strong>No</strong></em>, no you don't have to wear tight lycra (but it helps) <br>
                 <em><strong>Yes</strong></em>, this is a real sport. It's been in the Olympics since Sydney 2000. <br>
                 <em><strong>No</strong></em>, you can't "do a flip" until you've worked up to the skill. <br>
                 <em><strong>Yes</strong></em>, it's only €15 for a whole years membership!  <br>
@@ -201,7 +202,7 @@ addHeader();
             <p>If you have any feedback, suggestions, secrets, adoration or ideas, head over to the <a href="forum/404">404 Forum</a> and we'll see what we can do.</p>
 
             <p>
-                Yours confoundedly,<br>
+                Yours interchangeably,<br>
                 <i>Paul and Glasgow</i>
             </p>
             
@@ -214,5 +215,5 @@ addHeader();
 <?php 
 addFooter();
 ?>
-<link rel="stylesheet" href="dist/css/flickity.css">
-<script src="dist/js/flickity.min.js"></script>
+<link rel="stylesheet" href="css/flickity.css">
+<script src="js/libs/flickity.min.js"></script>

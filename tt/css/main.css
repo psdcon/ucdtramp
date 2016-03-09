@@ -1,0 +1,33 @@
+
+
+a:hover, a:active{
+	animation: hop 0.2s both; 
+}
+
+.page.ng-enter {
+    animation: slideInRight 0.2s both;
+    z-index: 1;
+}
+.page.ng-leave {
+    animation: slideOutLeft 0.2s both;
+    z-index: 1;
+}
+
+td{
+	cursor:pointer;
+}
+
+@keyframes hop {
+    0%      { transform: translateY(0); }
+    50%     { transform: translateY(-6px); }
+    100%    { transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+    from    { transform: translateX(100%); }
+    to      { transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+    to      { transform: translateX(-100%); }
+}

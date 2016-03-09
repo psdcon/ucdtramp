@@ -7,9 +7,16 @@
 
     <footer>
         <picture>
-            <source media="(min-width:769px)" srcset="images/backgrounds/footer.jpg">
-            <!-- <img src="images/backgrounds/mfooter.jpg" alt=""> -->
-            <img onload="if(window.innerWidth>768)this.src='images/backgrounds/footer.jpg'" src="images/backgrounds/mfooter.jpg" alt="Bottom of trampoline">
+        <?php
+            if ($theme)
+                echo '
+                <source media="(min-width:769px)" srcset="themes/'.$theme.'/footer.jpg">
+                <img onload="if(window.innerWidth>768)this.src=\'images/backgrounds/footer.jpg\'" src="themes/'.$theme.'/mfooter.jpg" alt="Bottom of trampoline">';
+            else
+                echo '
+                <source media="(min-width:769px)" srcset="images/backgrounds/footer.jpg">
+                <img onload="if(window.innerWidth>768)this.src=\'images/backgrounds/footer.jpg\'" src="images/backgrounds/mfooter.jpg" alt="Bottom of trampoline">';
+        ?>
         </picture>
 
         <div class="footer__links">
@@ -25,20 +32,25 @@
     </footer>
     
     <!-- Non blocking css -->
-    <link href="dist/css/animate.css" rel="stylesheet">
-    <link href="dist/css/emojione.sprites.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/emojione.sprites.css" rel="stylesheet">
     <!--Font awesome - icon plugin -->
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
     
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="dist/js/bootstrap.min.js"></script>
+    <script src="js/libs/bootstrap.min.js"></script>
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script> -->
-    <script src="dist/js/main.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Button spinner -->
+    <link href="css/ladda-themeless.min.css" rel="stylesheet">
+    <script src="js/libs/spin.min.js"></script>
+    <script src="js/libs/ladda.min.js"></script>
     
     <!-- Bootstrap error checking -->
     <!-- <script>(function(){var s=document.createElement("script");s.onload=function(){bootlint.showLintReportForCurrentDocument([]);};s.src="https://maxcdn.bootstrapcdn.com/bootlint/latest/bootlint.min.js";document.body.appendChild(s)})();</script> -->
 
-
+    <!-- Google Analytics -->
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -47,6 +59,14 @@
 
       ga('create', 'UA-41915009-3', 'ucdtramp.com');
       ga('send', 'pageview');
+
+      // Paddys day haha
+      (function nativeTreeWalker() {
+          var node, walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+          while(node = walker.nextNode()) {
+              node.nodeValue = node.nodeValue.replace(/o/, '☘');
+          }
+      })()
     </script>
 </body>
 </html>

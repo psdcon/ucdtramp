@@ -1,5 +1,11 @@
 <?php
 include_once 'includes/functions.php';
+include_once 'includes/functions_forum.php';
+
+function returnJSON($name,$data){
+    $json2return = json_encode(array($name => $data));
+    die($json2return);
+}
 
 if (!isset($_POST['action']))
     die("No POST action");
@@ -7,18 +13,20 @@ if (!isset($_POST['action']))
 $ipBlacklist = array('09809','66.36.229.205','84.139.95.31','220.225.172.229','217.159.200.187','66.199.247.42','216.195.49.179','66.79.163.226','206.83.210.59','24.46.72.158','5.39.219.26');
 
 if ($_POST['action'] == 'checkForNewPost'){
-    // Every request must send forumId
+    // Every client request for new posts sends both forumId and newestPostsId
     $forumId = $_POST['forumId'];
     $newestPostsId = $_POST['newestPostsId'];
 
     $newPostCheckSQL = "SELECT * FROM forum_posts WHERE id > $newestPostsId AND forum = $forumId";
-    if (!$newPostResult = mysqli_query($db, $newPostCheckSQL))
-        die(json_encode(array('error' => mysqli_error($db))));
+    if (!$newPostsResult = mysqli_query($db, $newPostCheckSQL)){
+        $errorData = mysqli_error($db).' Query: '.$newPostCheckSQL;
+        returnJSON('error', $errorData);
+    }
     
-    if (mysqli_num_rows($newPostResult) > 0){
+    if (mysqli_num_rows($newPostsResult) > 0){
         // Send post json obj down
-        $postsArray = posts2AssocArray($newPostResult);
-        die(json_encode(array('posts' => $postsArray)));
+        $posts2send = posts2send($newPostsResult);
+        returnJSON('posts', $posts2send);
     }
     else {
         die(); // no post
@@ -39,29 +47,37 @@ else if ($_POST['action'] == 'newPost'){
 
     // Add post
     $addPostSQL = "INSERT INTO forum_posts (forum, users_forum_id, sender, parent_id, post_time, message, ipaddress) VALUES ($forumId, '$usersForumId', '$forumUser', $parentPostId, $postTime, '$forumMessage', '$clientIp')";
-    if (!mysqli_query($db, $addPostSQL))
-        die(json_encode(array('error' => mysqli_error($db))));
-
-    // Saves users name for next time. Lasts for a year
-    setcookie("forumUser", $forumUser, (time()+31556926), '/');
-    if ($forumId == 1) 
-        notificationEveryone();
+    if (!mysqli_query($db, $addPostSQL)){
+        $errorData = mysqli_error($db).' Query: '.$addPostSQL;
+        returnJSON('error', $errorData);
+    }
     
-    // Return with the id of the post in the db
+    // Get id of the post from the db
     $newPostId = mysqli_insert_id($db);
+    // Get the whole post
     $newPostCheckSQL = "SELECT * FROM forum_posts WHERE id = $newPostId LIMIT 1";
-    if (!$newPostResult = mysqli_query($db, $newPostCheckSQL))
-        die(json_encode(array('error' => mysqli_error($db))));
+    if (!$newPostResult = mysqli_query($db, $newPostCheckSQL)){
+        $errorData = mysqli_error($db).' Query: '.$newPostCheckSQL;
+        returnJSON('error', $errorData);
+    }
 
-    // Get post just submitted
-    $postsArray = posts2AssocArray($newPostResult);
-    // die(var_dump($postsArray[0]));
-    // Email any committee posts
-    $emailId = ($postsArray[0]['parentPostId'] == 0)? $postsArray[0]['id'] : $postsArray[0]['parentPostId'];
-    emailPost($emailId, $postsArray[0]['forumUser'], $postsArray[0]['forumMessage']);
+    // Saves users name for next time. Expires in a year
+    setcookie("forumUser", $forumUser, time()+31556926, '/');
+
+    // Send push notifications
+    // if ($forumId == 1)
+        // notificationEveryone();
+
+    
+    // $postAssocArray = mysql2AssocArray(mysqli_fetch_array($newPostResult), MYSQLI_ASSOC); // Get post just submitted in all it's properly formatted glory
+    // Send email
+    // $emailId = ($postAssocArray['parentPostId'] == 0)? $postAssocArray['id'] : $postAssocArray['parentPostId'];
+    // emailPost($emailId, $postAssocArray['forumUser'], $postAssocArray['forumMessage']);
 
     // Send formatted post to client
-    die(json_encode(array('posts' => $postsArray)));
+    $postData = posts2send($newPostResult);
+    // var_dump($postData);
+    returnJSON('post', $postData);
 }
 else if ($_POST['action'] == 'editPost'){
     $clientIp = $_SERVER['REMOTE_ADDR']=='::1'?'00000000':encode_ip($_SERVER['REMOTE_ADDR']);
@@ -80,8 +96,10 @@ else if ($_POST['action'] == 'editPost'){
     $backupSQL = "INSERT INTO `forum_posts`(`parent_id`, `forum`, `users_forum_id`, `sender`, `post_time`, `message`, `ipaddress`, `length1`, `length2`)
                   SELECT `parent_id`, 0, `users_forum_id`, `sender`, `post_time`, `message`, `ipaddress`, `length1`, `length2` FROM `forum_posts` WHERE `id` = $postId";
     $updateSQL = "UPDATE `forum_posts` SET `message` = '$forumMessage', `ipaddress` = '$clientIp' WHERE `id` = $postId";
-    if (!mysqli_query($db, $backupSQL) || !mysqli_query($db, $updateSQL))
-        die(json_encode(array('error' => mysqli_error($db))));
+    if (!mysqli_query($db, $backupSQL) || !mysqli_query($db, $updateSQL)){
+        $errorData = mysqli_error($db);
+        returnJSON('error', $errorData);
+    }
     
     header("Location: forum/".$forumId."#".$postId);
 }
@@ -184,26 +202,31 @@ function checkSpam($clientIp, $forumUser, $forumMessage){
 function emailPost($emailId, $forumUser, $forumMessage){
     global $forumId;
 
-    if ($forumId != 2)
-        return;
-
     switch ($forumId) {
         case 0:
-            //$to      = 'psdcon@gmail.com';
+            $to = ""; //$to      = 'psdcon@gmail.com';
             $subject = 'UCDTC Deleted Forum Post';  
             break;
         case 1:
-            //$to      = 'psdcon@gmail.com';
+            $to = ""; //$to      = 'psdcon@gmail.com';
             $subject = 'UCDTC Public Forum Post';
             break;
         case 2:
             $to      = 'psdcon@gmail.com, colmgalligan@gmail.com, roseanne.b.loco@gmail.com, orlacole@hotmail.com, mheslin8@gmail.com, mquirkebolt@yahoo.ie, emilyrose.farrell94@gmail.com, keith.fay@ucdconnect.ie, nicoletianihad@gmail.com, glasgowtc@gmail.com';
             $subject = 'UCDTC Committee Forum Post #'.$emailId;
-
+        case 404:
+            if ($forumUser == 'Paul')
+                return;
+            $to      = 'psdcon@gmail.com';
+            $subject = 'UCDTC 404 Forum Post';  
+            break;
         default:
             # code...
             break;
     }
+
+    if ($to == "")
+        return;
 
     $mailmessage = '
         <html>

@@ -28,16 +28,16 @@ gulp.task('watch', ['css'], function() {
 gulp.task('css', function() {
     return gulp.src("css/*.css")
         .pipe(autoprefixer())
-        .pipe(minifyCss({compatibility: 'ie10'}))
-        .pipe(gulp.dest('dist/css'))
+        // .pipe(minifyCss({compatibility: 'ie10'}))
+        .pipe(gulp.dest('css'))
         .pipe(browserSync.stream());
 });
 
 // Minify js from js folder, save it to dist/js and auto-reload browser sync
 gulp.task('js', function() {
   return gulp.src('js/*.js')
-    .pipe(uglify())
-    .pipe(gulp.dest('dist/js'))
+    // .pipe(uglify())
+    // .pipe(gulp.dest('dist/js'))
     .pipe(browserSync.stream());
 });
 
@@ -56,12 +56,15 @@ gulp.task( 'ftp', function() {
     // Selects files to sync
     var globs = [
         '*.*', // Match files in root, not folders
-        'dist/**',
+        // 'dist/**', // Match folders
         'css/**',
+        'fonts/**',
         'js/**',
+        'themes/**',
         'templates/**',
         'includes/**',
         'files/**',
+        
         // Upload images folder but ignore pages folder and it's contents
         'images/**',
         '!images/pages/**',

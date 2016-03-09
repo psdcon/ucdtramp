@@ -141,10 +141,10 @@ else if (isset($_REQUEST['eventname'])) {
 
     addFooter();
     ?>
-    <link rel="stylesheet" href="dist/css/swipebox.css">
-    <script src="dist/js/jquery.swipebox.js"></script>
-    <script src="dist/js/jquery.timeago.js"></script>
-    <script src="dist/js/gallery.js"></script>
+    <link rel="stylesheet" href="css/swipebox.css">
+    <script src="js/libs/jquery.swipebox.js"></script>
+    <script src="js/libs/jquery.timeago.js"></script>
+    <script src="js/gallery.js"></script>
 
     <?php
     // If GET image is set, load that image

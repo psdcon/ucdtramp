@@ -28,7 +28,7 @@ addHeader();
         <p>If you haven’t had enough exercise after 4 hours of bouncing a week, don't 
             worry. You can expect lots of body conditioning in our squad sessions. This 
             can include anything from push ups to sprints to learning how to handstand!
-            Talk to Head Coach Ryan or Assistant Head Coach Colm at our regular 
+            Talk to Head Coach Colm or Assistant Head Coach Nicole at our regular 
             trainings for more info.</p>
 
         <p>Cardiovascular fitness is also quite important, so running / jogging is very helpful. 
@@ -187,26 +187,26 @@ addHeader();
             </p>
         </div>';
     }
-    for ($i=0; $i < 8; $i++) { 
-    	$thumbnailSrc = '//ucdtramp.com/images/pages/coaches/mysteryx400.jpg';
-    	$thumbnailSrcset = '//ucdtramp.com/images/pages/coaches/mysteryx100.jpg 100w,
-    	                    //ucdtramp.com/images/pages/coaches/mysteryx200.jpg 200w,
-    	                    //ucdtramp.com/images/pages/coaches/mysteryx400.jpg 400w';
-    	echo '
-    	<div class="coach">
-    	    <p>
-    	        <img class="coach__thumb" data-click="bounceMe" data-numclicks="0" srcset="'.$thumbnailSrcset.'" src="'.$thumbnailSrc.'" alt="Myster">
-    	    </p>
-    	    <p class="coach-details">
-    	        <strong>Name</strong>: Coach Locked<br>
-    	        <strong>Course</strong>: ???<br>
-    	        <strong>Level</strong>: 1<br>
-    	    </p>
-    	    <p>
-    	    	Keep trampolining to find out who this coach is! <strong>#thesuspensewillkillyou</strong>
-    	    </p>
-    	</div>';
-    }
+   /* for ($i=0; $i < 8; $i++) { 
+        $thumbnailSrc = '//ucdtramp.com/images/pages/coaches/mysteryx400.jpg';
+        $thumbnailSrcset = '//ucdtramp.com/images/pages/coaches/mysteryx100.jpg 100w,
+                            //ucdtramp.com/images/pages/coaches/mysteryx200.jpg 200w,
+                            //ucdtramp.com/images/pages/coaches/mysteryx400.jpg 400w';
+        echo '
+        <div class="coach">
+            <p>
+                <img class="coach__thumb" data-click="bounceMe" data-numclicks="0" srcset="'.$thumbnailSrcset.'" src="'.$thumbnailSrc.'" alt="Myster">
+            </p>
+            <p class="coach-details">
+                <strong>Name</strong>: Coach Locked<br>
+                <strong>Course</strong>: ???<br>
+                <strong>Level</strong>: 1<br>
+            </p>
+            <p>
+                Keep trampolining to find out who this coach is! <strong>#thesuspensewillkillyou</strong>
+            </p>
+        </div>';
+    }*/
 ?>
 </div>
 

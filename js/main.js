@@ -1,5 +1,5 @@
-
 $(document).ready(function () {
+
     // Internet explorer check
     if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)) { //test for MSIE x.x;
         var ieversion = Number(RegExp.$1); // capture x.x portion and store as a number
@@ -107,9 +107,10 @@ var Forum = {
     submittingPost: false,
     unseenPosts: [],
     checkNewForumPostIntervalId: 0,
+    checkInterval: 4000,
     init : function() {
         this.bindUIActions();
-        this.checkNewForumPostIntervalId = window.setInterval(this.checkNewForumPost, 2000);
+        this.checkNewForumPostIntervalId = window.setInterval(this.checkNewForumPost, this.checkInterval);
         // init vars
         this.newestPostsId = $('.js-newestPostsId').val();
         this.forumId = $('.js-forumId').val();
@@ -156,11 +157,10 @@ var Forum = {
             var $postBtn = $postForm.find('.btn-post');
             var $forumUserEl = $postForm.find('.forum-user');
             var $forumMessageEl = $postForm.find('.forum-message');
+
             // Set the button content to spinner
-            if ($postForm.data('parentid') === 0)
-                $postBtn.html('<img src="images/pages/forum/spinner-blue.gif" alt="Loading..." />').prop('disabled', true); // Set to spinner and disable
-            else
-                $postBtn.html('<img src="images/pages/forum/spinner-yellow.gif" alt="Loading..." />').prop('disabled', true); // Set to spinner and disable
+            spinnerBtn = Ladda.create($postBtn[0]);
+            spinnerBtn.start();
 
             // Post data
             var postTime = new Date();
@@ -181,35 +181,38 @@ var Forum = {
                 dataType: 'json', // server return type
                 success: function(response){
                     Forum.submittingPost = false;
-                    $postBtn.text('Post').prop('disabled', false);
-                    console.log(response);
+                    spinnerBtn.stop();
+                    $postBtn.text('Post')
+                            .prop('disabled', false);
 
-                     if(response.posts){
-                        // Update the id of the newest post, reenable checkNewForumPost and add post to page
-                        newPost = response.posts[0];
-                        Forum.newestPostsId = newPost.id;
-                        $newPostEl = Forum.addPost(newPost);
+                    // console.log(response);
+
+                    if(response.post && response.post.length>0){
+                        thisPost = response.post[0];
+                        // Update the id of the newest post
+                        Forum.newestPostsId = thisPost.id;
+                        // Add post to page
+                        $newPostEl = Forum.addPost(thisPost);
 
                         // Reset forms
                         if (post.parentPostId === 0){
                             $postForm[0].reset(); // Reset forum
-                            $('.btn-post:first-child').prop('disabled', true);
+                            $postBtn.prop('disabled', true); // Turn off btn again
                         }
                         else {
                             // When reply, delete reply form.
                             $postForm.html(''); // Remove reply form
-                            $postForm.parent().find('button').text('reply'); // reset reply button
+                            $postForm.parent().find('button').text('reply'); // reset 'cancel' buttn to 'reply'
                         }
                     }
-                    // else if (response.error){
                     else {
-                         // An expected error from the server
-                        Forum.error(response.error);
+                        // An expected error from the server
+                        Forum.error('Error submitting post: ' + JSON.stringify(response));
                     }
                 },
                 // An unexpected error from the server; json parse probably failed
                 error: function(jqXHR, textStatus, errorThrown) { 
-                    Forum.error(jqXHR.responseText);
+                    Forum.error('Unexpected error submitting post: ' + jqXHR.responseText);
                 }
             });
 
@@ -280,15 +283,16 @@ var Forum = {
             }); 
 
             // Add like to database
-            console.log("Liking post "+ postId);
+            // console.log("Liking post "+ postId);
             $.ajax({
                 type: 'POST',
                 url : 'forum.ajax.php',
                 data: "action=updateLikeCount&postId="+postId,
                 dataType: "text",
                 success: function(data){
-                    if (data !== '')
-                        console.log(data);
+                    if (data !== ''){
+                        Forum.error('Error liking post: ' + postId + ' ' + response);
+                    }
                 }
             });
         },
@@ -306,7 +310,7 @@ var Forum = {
                 }
                 scrollTimer = setTimeout(function(){                    
                     if (elementInViewport($thisNewPost)){
-                        $thisNewPost.children().first().addClass('fade-highlight');
+                        $thisNewPost.addClass('fade-highlight');
 
                         // Update notification
                         Forum.unseenPosts.remove($thisNewPost);
@@ -342,57 +346,13 @@ var Forum = {
 
     // Adds new post to the DOM
     addPost: function(post){
-        // Post is split up because replies dont have the header and footer.
-        var postHeaderTemplate = 
-        '<div class="col-xs-12 forum-post">';
-
-        var postContentTemplate = 
-            '<div class="for-hightling">'+
-                '<div class="post-contents">'+
-                    '<div class="post-header" id="'+ post.id +'">'+
-                        '<strong class="post-header-name">'+ post.forumUser +'</strong>'+
-                        '<small class="post-header-time"> '+
-                            '<time datetime="'+ post.htmlDatetime +'" title="'+ post.readableTime +'">'+
-                                post.niceTime +
-                            '</time>'+
-                        '</small>'+
-
-                        '<span class="post-header-actions">'+
-                            post.headerActions +
-                        '</span>'+
-                    '</div>'+
-                    '<div class="post-message clearfix">'+
-                        post.forumMessage +
-
-                        '<!-- Like button -->'+
-                        '<button type="button" class="btn post-like-btn" title="Approve" data-action="likeButton" data-postid="'+ post.id +'">'+
-                            '<img class="post-like-img not-liked" src="images/pages/forum/like.svg" alt="Like" > '+
-                            '<span class="post-like-count"> '+
-                                '0'+
-                            '</span>'+
-                        '</button>'+
-                    '</div>'+
-                '</div>'+
-            '</div>';
-            
-        var postFooterTemplate =
-            '<div class="post-replies"></div>'+
-            '<div class="post-footer">'+
-                '<!-- For reply box -->'+
-                '<button class="btn-reply btn-link" data-click="reply">reply</button>'+
-                '<form class="form-horizontal reply-form" data-postid="'+ post.id +'"></form>'+
-            '</div>'+
-        '</div>';
-
-
+       
         // Add post to page
-        var $newPostEl; // keeps a jQuery reference of the new psot in the DOM after the post's been added
+        var $newPostEl = $(post.postHTML); // keeps a jQuery reference of the new psot in the DOM after the post's been added
         if (post.parentPostId == '0'){ 
-            $newPostEl = $(postHeaderTemplate+postContentTemplate+postFooterTemplate);
             $('#posts-container').prepend($newPostEl); // Add to top of page
         }
         else { // When reply, delete reply form.
-            $newPostEl = $(postContentTemplate);
             $('#'+post.parentPostId).parent('.forum-post').children('.post-replies').append($newPostEl); // Add as reply to parent post
         }
 
@@ -406,7 +366,7 @@ var Forum = {
     /***** DYNAMIC POSTS (and likes?) ****/
     checkNewForumPost: function(){
         // Only check for new post after a new post has been submitted 
-        // so that newestPostId can be updated
+        // so that newestPostsId can be updated
         if (Forum.submittingPost)
             return;
         
@@ -427,7 +387,7 @@ var Forum = {
                         var unseenLength = Forum.unseenPosts.push(Forum.addPost(thatPost));
 
                         // Use query element reference to edit post after it's added
-                        Forum.unseenPosts[unseenLength-1].children().first().addClass('highlight');
+                        Forum.unseenPosts[unseenLength-1].addClass('highlight');
                         // Used to check if post loaded out of view
                         Forum.unseenPosts[unseenLength-1].alreadyHandlered = false; 
                         
@@ -438,7 +398,7 @@ var Forum = {
 
                     // Flash title
                     if (Forum.unseenPosts.length === 1) {
-                        $.titleAlert(response.posts[0].forumUser + " posted in the forum", {requireBlur:true, stopOnFocus:true, interval:1000});
+                        $.titleAlert("Someone posted in the forum", {requireBlur:true, stopOnFocus:true, interval:1000});
                     }
                     else {
                         $.titleAlert(Forum.unseenPosts.length + " new posts in the forum", {requireBlur:true, stopOnFocus:true, interval:1000});
@@ -459,7 +419,7 @@ var Forum = {
 
                             // Post loaded into viewport
                             if (elementInViewport($thisNewPost)){
-                                $thisNewPost.children().first().addClass('fade-highlight');
+                                $thisNewPost.addClass('fade-highlight');
                                 Forum.unseenPosts.remove($thisNewPost);
                             }
                             // Post loaded out of view. Add a scroll listener and notification link
@@ -471,15 +431,15 @@ var Forum = {
                                 // }
 
                                 // Add post to notification popup
-                                var forumUser = $thisNewPost.find('.post-header-name').text();
-                                var $scrollToClick = $('<div>Click to scroll to '+forumUser+'\'s post</div>');
-                                $scrollToClick.on('click', Forum.handlers.scrollToClickHandler($thisNewPost));
+                                // var forumUser = $thisNewPost.find('.post-header-name').text();
+                                // var $scrollToClick = $('<div>Click to scroll to '+forumUser+'\'s post</div>');
+                                // $scrollToClick.on('click', Forum.handlers.scrollToClickHandler($thisNewPost));
                                 // Show notification
-                                $('.new-post-notification').removeClass('fadeOutDown').addClass('fadeInUp');
-                                $('.new-post-notification').append($scrollToClick);
+                                // $('.new-post-notification').removeClass('fadeOutDown').addClass('fadeInUp');
+                                // $('.new-post-notification').append($scrollToClick);
 
                                 // Add scroll handler for each new post
-                                $(window).on('scroll', Forum.handlers.postScrollHandler($thisNewPost, $scrollToClick));
+                                // $(window).on('scroll', Forum.handlers.postScrollHandler($thisNewPost, $scrollToClick));
 
                                 $thisNewPost.alreadyHandlered = true;
                             }
@@ -489,19 +449,15 @@ var Forum = {
                     postInViewHandler(); // Run to see if tab is in view
                     tabVisible(postInViewHandler); // Else set the tab listener and when the tab comes into view, then run
                 }
-                else {
-                    // Server error that came down as json
-                    Forum.error(response);
+                else { // Server error that came down as json
+                    Forum.error('Error fetching new posts: ' + JSON.stringify(response));
                 }
             },
-            // An unexpected error from the server; json parse probably failed
+            // An error from the server;
             error: function(jqXHR, textStatus, errorThrown) { 
-                // '' is no posts on server
-                if(jqXHR.responseText !== ''){
-                    Forum.error(jqXHR.responseText);
-                }
-                if(jqXHR.status != 200){
-                    Forum.stopCheckNewForumPost();
+                // '' means no new posts on server. Anything else would be some unexpected php error which failed the json parse
+                if(jqXHR.responseText.trim() !== ''){
+                    Forum.error('Unexpected error fetching new posts: ' + jqXHR.responseText);
                 }
             }
         });
@@ -514,20 +470,22 @@ var Forum = {
     },
     // Forum.error function
     error: function(errorMessage){
-        var messageHtml = '<strong>Oops, something went wrong.</strong> Please show the error below to the Webmaster <br>'+
-                          '<pre>' + errorMessage +'</pre>';
+        var messageHtml = 
+            '<div class="alert alert-danger" role="alert">'+
+                '<strong>Oops!</strong> Something went wrong. Please show the error below to the Webmaster.<br>'+
+                '<pre>' + errorMessage + '</pre>' +
+            '</div>';
         $('#posts-container').prepend(messageHtml);
         
-        // this.stopCheckNewForumPost();
+        Forum.stopCheckNewForumPost();
     },
-    stopped: false,
     stopCheckNewForumPost: function(){
-        if (!Forum.stopped){
-            // Stop calling server every few seconds
-            $('#posts-container').prepend('<pre>Something went wrong and automatic Forum updates had to stop. Maybe you lost your internet connection :(. Please refresh the page to restart them.</pre>');
-            window.clearInterval(Forum.checkNewForumPostIntervalId);
-            Forum.stopped = true;
-        }
+        // Stop polling the server and signal to the user to refresh
+        window.clearInterval(Forum.checkNewForumPostIntervalId);
+        $('#posts-container').prepend(
+            '<div class="alert alert-success" style="cursor:pointer;" onclick="window.location.reload();">'+
+                '<strong>Heads up!</strong> Click here to <span class="alert-link">refresh the page</span> to see new forum posts.' +
+            '</div>');
     }
 };
 

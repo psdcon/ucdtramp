@@ -1,5 +1,6 @@
 <?php
 include_once 'includes/functions.php';
+include_once 'includes/functions_forum.php';
 
 // If the forum is specified in the url, select that one. Else default to 1, the public forum
 $forumId = (isset($_GET['forum']))? $_GET['forum']: 1;
@@ -52,42 +53,43 @@ if (isset($_GET['delete'])) {
             exit(mysqli_error($db));
     }
     // If no permission or when succeeded, go back to forum page
-    header("Location: ../../forum/".$post['forum']);
+    header("Location: ../../forum");
 }
 
-// Check if an auto gen'd message should be added to public forum
-$autoPostTimer = time() - 60*60*24; // seconds in 24hours
-$autoPostQuery = mysqli_query($db, "SELECT * FROM forum_posts WHERE forum = 1 ORDER BY id DESC LIMIT 1");
-$autoPostLastPost = mysqli_fetch_array($autoPostQuery);
+// Check if an auto generated message should be added to public forum
+$autoGenTimer = time() - 60*60*24; // seconds in 24hours
+$autoGenQuery = mysqli_query($db, "SELECT * FROM forum_posts WHERE forum = 1 ORDER BY id DESC LIMIT 1");
+$autoGenLastPost = mysqli_fetch_array($autoGenQuery);
 
 // If the time of the last post was more than 24 hours ago, add auto gen'd post
-if ($autoPostTimer > $autoPostLastPost['post_time'] && $forumId == 1) {
+if ($autoGenTimer > $autoGenLastPost['post_time'] && $forumId == 1) {
     // Get a random photo from the punishment photos
-    // $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photo_punishment` WHERE `used` < 2"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
+    // This doesnt work anemore $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photo_punishment` WHERE `used` < 2 AND `id` > 364"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
     // $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 2  AND `id` >= ($randomIdSQL) ORDER BY `id` LIMIT 1";
-    // $punishmentPhoto = mysqli_fetch_array(mysqli_query($db, $punishmentSQL), MYSQLI_ASSOC);
-    // $autoMessage = "
-    //     ************************** AUTOMATICALLY GENERATED MESSAGE **************************
+    $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 1 AND `id` > 365 ORDER BY `id` LIMIT 1";
+    $punishmentPhoto = mysqli_fetch_array(mysqli_query($db, $punishmentSQL), MYSQLI_ASSOC);
+    $autoMessage = "
+        ************************** AUTOMATICALLY GENERATED MESSAGE **************************
         
-    //     Pay attention to me or I will show you more Cian...
+        It's been 24 hours again. Here's a photo you've actually never seen before ;)...
         
-    //     https://ucdtramp.com/images/punishment_photos/".$photo['img'];
+        https://ucdtramp.com/images/punishment_photos/".$punishmentPhoto['img'];
 
-    // // Update the used count of this photo
-    // mysqli_query($db, "UPDATE `photo_punishment` SET `used` = `used`+1 WHERE `id`='".$photo['id']."'");
+    // Update the used count of this photo
+    mysqli_query($db, "UPDATE `photo_punishment` SET `used` = `used`+1 WHERE `id`=".$punishmentPhoto['id']);
 
     // $pickupLines = array();
     // $randomPickupLine = $pickupLines[mt_rand(0, count($pickupLines))];
     // $autoMessage = "Pickup line #".$selected_pickup." - ".$pickupLines[$selected_pickup];
 
-    // $forumUser = "The ladies man";
-    // $forumMessage = mysqli_real_escape_string($db, htmlentities($autoMessage));
-    // $postTime = $autoPostTimer;
+    $forumUser = "THE FORUM";
+    $forumMessage = mysqli_real_escape_string($db, htmlentities($autoMessage));
+    $postTime = time();
 
-    // // Add autogen'd post
-    // $addPostSQL = "INSERT INTO forum_posts (forum, users_forum_id, sender, parent_id, post_time, message, ipaddress) VALUES ('1', '0', '$forumUser', 0, $postTime, '$forumMessage', '00000000')";
-    // if (!mysqli_query($db, $addPostSQL))
-    //     die(json_encode(array('error' => mysqli_error($db))));
+    // Add autogen'd post
+    $addPostSQL = "INSERT INTO forum_posts (forum, users_forum_id, sender, parent_id, post_time, message, ipaddress) VALUES ('1', '0', '$forumUser', 0, $postTime, '$forumMessage', '00000000')";
+    if (!mysqli_query($db, $addPostSQL))
+        die(json_encode(array('error' => mysqli_error($db))));
 }
 
 
@@ -100,8 +102,7 @@ $posts = mysqli_query($db, "SELECT * FROM forum_posts WHERE forum = $forumId AND
     LIMIT ".$forumDetails['posts_per_page']." OFFSET $paginationStartIndex");
 
 // Used in the javascript to find new posts. TODO: Get id from post elements #id
-$newestPostsId = mysqli_fetch_array(mysqli_query($db, "SELECT MAX(id) FROM forum_posts"))['MAX(id)']; 
-
+$newestPostsId = mysqli_fetch_array(mysqli_query($db, "SELECT MAX(id) FROM forum_posts"))['MAX(id)'];
 // Get a value for the name forum field
 $username = '';
 if (isset($_COOKIE['user'])) {
@@ -121,9 +122,9 @@ addHeader();
     if ($forumId == '404') {
         echo'
             <div class="forum-header-404">
-                <h1>Welcome to the 404 Forum</h1>
+                <h1>Welcome to the 404rum</h1>
                 <p>This is a place where you can make a website suggestion or correction and it goes straight to the webmaster. It\'s purple so you know it\'s not the regular forum. The music that you might be hearing, I cant get it out of my head, now it\'s in yours too.</p>
-                <audio src="//ucdtramp.com/files/ZeldaTP_Menu_Select_Screen.mp3" loop autoplay controls></audio>
+                <audio style="max-width:100%;" src="//ucdtramp.com/files/happy_hogwarts.mp3" loop autoplay controls></audio>
             </div>
             <style>
                 .post-header {
@@ -181,7 +182,7 @@ addHeader();
 <form class="form-horizontal post-form" onsubmit="return false;" data-parentid="0">
     <div class="form-group forum-post-inputs row">
         <div class="col-sm-3 col-md-2">
-            <input type="text" class="form-control forum-user" placeholder="Mr. Smith" value="<?= $username ?>" >
+            <input type="text" class="form-control forum-user" placeholder="Mr(s). Smith" value="<?= $username ?>" >
             <input type="hidden" class="js-forumId" value="<?= $forumId ?>">
             <input type="hidden" class="js-newestPostsId" value="<?= $newestPostsId ?>">
         </div>
@@ -192,8 +193,8 @@ addHeader();
     <!-- Buttons -->
     <div class="form-group row">
         <div class="col-sm-3 col-md-2">
-            <button type="submit" class="form-control btn btn-primary btn-post">
-                Post
+            <button type="submit" class="form-control btn btn-primary btn-post ladda-button" data-style="slide-up">
+                <span class="ladda-label">Post</span>
             </button>
         </div>
         <div class="col-sm-9 col-md-10 js-buttons">
@@ -286,30 +287,19 @@ addHeader();
 <div class="row" id="posts-container">
     <?php
     // Loop and print out each forum post
-    while ($post = mysqli_fetch_array($posts, MYSQL_ASSOC)) {
+    while ($postResult = mysqli_fetch_array($posts, MYSQL_ASSOC)) {
         // Turns the sql array into a properly formated post array
-        $post = formatPost($post);
+        $post = mysql2AssocArray($postResult);
         $postHtml = post2HTML($post);
         // Get all the replies for this post
         $repliesHtml = '';
         $postReplies = mysqli_query($db, "SELECT * FROM forum_posts WHERE parent_id='" . $post['id'] . "' AND forum='$forumId' ");
         while ($reply = mysqli_fetch_array($postReplies)) {
-            $repliesHtml .= post2HTML(formatPost($reply));
+            $repliesHtml .= post2HTML(mysql2AssocArray($reply));
         }
 
         // Print a forum post and all its replies
-        echo '
-        <div class="col-xs-12 forum-post">'.
-            $postHtml .'
-            <div class="post-replies">'.
-                $repliesHtml .'
-            </div>
-            <div class="post-footer">
-                <!-- For reply box -->
-                <button type="button" class="btn-link btn-reply" data-click="reply">reply</button>
-                <form action="" class="form-horizontal reply-form" data-parentid="'. $post['id'] .'"></form>
-            </div>
-        </div> <!-- forum-post -->';
+        echo parentPost2HTML($post['id'], $postHtml, $repliesHtml);
     }
     ?>
 </div> <!-- .row #posts-container -->
@@ -323,7 +313,7 @@ $num_posts = mysqli_num_rows($all_posts);
 $num_pages = ceil($num_posts / $forumDetails['posts_per_page']);
 
 $paginationHtml = '';
-for ($i = 1; $i < $num_pages; $i++) {
+for ($i = 1; $i < $num_pages+1; $i++) {
     if ($i == $paginationPage)
         $paginationHtml .= '<li class="active"><a href="forum/'.$forumId.'/page/'.$i.'">'.$i.'</a></li>';
     else
@@ -336,17 +326,42 @@ for ($i = 1; $i < $num_pages; $i++) {
         <span>Jump to a page:</span>
         <nav>
           <ul class="pagination">
-            <li class="<?= ($paginationPage == 0)? 'disabled': ''; ?>">
-              <a href="forum/<?= $forumId ?>/page/<?= ($paginationPage - 1) ?>" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            <?= $paginationHtml ?>
-            <li class="<?= ($paginationPage == $num_pages)? 'disabled': ''; ?>">
-              <a href="forum/<?= $forumId ?>/page/<?= ($paginationPage + 1) ?>" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
+            <?php
+                if ($paginationPage == 1){
+                    echo '
+                    <li class="disabled">
+                      <span aria-label="Previous" style="background-color: #eee;">
+                        <span aria-hidden="true">&laquo;</span>
+                      </span>
+                    </li>';
+                }
+                else{
+                    echo '
+                    <li>
+                      <a href="forum/'.$forumId.'/page/'. ($paginationPage - 1) .'" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>';
+                }
+                echo $paginationHtml;
+
+                if ($paginationPage == $num_pages){
+                    echo '
+                    <li class="disabled">
+                      <span aria-label="Next" style="background-color: #eee;">
+                        <span aria-hidden="true">&raquo;</span>
+                      </span>
+                    </li>';
+                }
+                else{
+                    echo '
+                    <li>
+                      <a href="forum/'.$forumId.'/page/'. ($paginationPage + 1) .'" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>';
+                }
+            ?>
           </ul>
         </nav>
     </div>
@@ -355,9 +370,9 @@ for ($i = 1; $i < $num_pages; $i++) {
 addFooter();
 ?>
 <!-- Files for forum live undates and push notifications -->
-<script src="dist/js/jquery.timeago.js"></script>
-<script src="dist/js/jquery.titleAlert.js"></script>
-<script src="dist/js/push.js"></script>
+<script src="js/libs/jquery.timeago.js"></script>
+<script src="js/libs/jquery.titleAlert.js"></script>
+<script src="js/push.js"></script>
 <script>
     $(document).ready(function () {
         Forum.init();
@@ -366,6 +381,6 @@ addFooter();
 
 <!-- Files for the emoji picker -->
 <!-- Turns all the shortnames into images -->
-<script src="dist/js/emojione.js"></script>
+<script src="js/libs/emojione.js"></script>
 <!-- Puts the images into the page -->
-<script src="dist/js/emoji.js"></script>
+<script src="js/emoji.js"></script>

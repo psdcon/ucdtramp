@@ -8,7 +8,9 @@ if (isset($_GET['name'])) {
     $editPermission = false;
     
     if (!$pageResult) {
-        header("Location: //ucdtramp.com/page/404");
+        // header("Location: //ucdtramp.com/page/404");
+        $pageSQL = mysqli_query($db, "SELECT * FROM pages WHERE pageurl='404' ");
+        $pageResult = mysqli_fetch_array($pageSQL);        
     }
     
     if ($pageResult['readperm'] > 0 && !$loggedIn) {
@@ -50,8 +52,8 @@ if (isset($_GET['name'])) {
     // only add the required js if the editor has been added
     if($editPermission){
         echo '
-            <script src="dist/js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
-            <script src="dist/js/page.js"></script>
+            <script src="js/libs/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+            <script src="js/page.js"></script>
         ';
     }
 }
@@ -82,7 +84,7 @@ else { //for debugin
     </style>
 <?php
     // $sql = "SELECT * FROM pages WHERE readperm <2 AND page-content LIKE '%\%%' ORDER BY TYPE ASC , YEAR ASC ";
-    $sql = "SELECT * FROM pages ORDER BY type ASC";
+    $sql = "SELECT * FROM pages WHERE readperm < 1 AND `id` < 1018 ORDER BY type ASC";
     
     $result = mysqli_query($db, $sql);
     echo '

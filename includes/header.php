@@ -42,14 +42,15 @@
 
     <!-- CSS Links -->
     <!-- <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"> -->
-    <link href="dist/css/bootstrap.css" rel="stylesheet">
-    <link href="dist/css/main.css" rel="stylesheet">
-    <link href="dist/css/desktop.css" rel="stylesheet" media="(min-width: 768px)">
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+    <link href="css/desktop.css" rel="stylesheet" media="(min-width: 768px)">
+    <?= ($theme)? '<link href="themes/'.$theme.'/theme.css" rel="stylesheet">': "";?>
     <!-- Some css in footer -->
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <!-- At the top and not the bottom with all the other js because of js in page['content'] in page.php and this was the easiest solution -->
-    <script src="dist/js/jquery-1.11.3.min.js"></script>
+    <script src="js/libs/jquery-1.11.3.min.js"></script>
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script> -->
 </head>
 <body>    
@@ -71,7 +72,13 @@
         ?>
         
         <div class="header-logo">
-            <img class="animated zoomInDown animation-delay-5" src="images/backgrounds/men.png" alt="UCDTC Evolutoion logo">
+            <?php 
+                if ($theme)
+                    echo '<img style="width:20%" class="header-logo-image ghost" src="themes/'.$theme.'/ghost.png" alt="UCDTC Ghost">';
+                else
+                    echo '<img class="header-logo-image animated zoomInDown animation-delay-5" src="images/backgrounds/men.png" alt="UCDTC Evolutoion logo">';
+            ?>
+            
         </div>
     </header>
 
