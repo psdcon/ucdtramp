@@ -7,37 +7,27 @@
     <title><?= $title ;?></title>
     <meta name="description" content="<?= $description ?>">
 
-    <link rel="apple-touch-icon" sizes="57x57" href="//ucdtramp.com/images/favicon/apple-touch-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="//ucdtramp.com/images/favicon/apple-touch-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="//ucdtramp.com/images/favicon/apple-touch-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="//ucdtramp.com/images/favicon/apple-touch-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="//ucdtramp.com/images/favicon/apple-touch-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="//ucdtramp.com/images/favicon/apple-touch-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="//ucdtramp.com/images/favicon/apple-touch-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="//ucdtramp.com/images/favicon/apple-touch-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="//ucdtramp.com/images/favicon/apple-touch-icon-180x180.png">
-    <link rel="icon" type="image/png" href="//ucdtramp.com/images/favicon/favicon-32x32.png" sizes="32x32">
-    <link rel="icon" type="image/png" href="//ucdtramp.com/images/favicon/favicon-194x194.png" sizes="194x194">
-    <link rel="icon" type="image/png" href="//ucdtramp.com/images/favicon/favicon-96x96.png" sizes="96x96">
-    <link rel="icon" type="image/png" href="//ucdtramp.com/images/favicon/android-chrome-192x192.png" sizes="192x192">
-    <link rel="icon" type="image/png" href="//ucdtramp.com/images/favicon/favicon-16x16.png" sizes="16x16">
-    <link rel="manifest" href="manifest.json">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="UCDTC">
-    <meta name="application-name" content="UCDTC">
-    <meta name="msapplication-TileColor" content="#2b5797">
-    <meta name="msapplication-TileImage" content="//ucdtramp.com/images/favicon/mstile-144x144.png">
-    <meta name="theme-color" content="#1974f2"> <!-- Android colour -->
-
     <!-- When using localhost, set the base to be the name of the wamp/www/foler ucdtramp -->
     <?= ($_SERVER['SERVER_NAME'] == 'ucdtramp')?
         '<BASE href="/">':
         '<BASE href="//ucdtramp.com/">';
     ?>
 
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon/favicon-16x16.png">
+    <link rel="mask-icon" href="images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1974f2"> <!-- Android colour -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="UCDTC">
+    <meta name="application-name" content="UCDTC">
+
     <!-- Facebook meta info -->
     <meta property="og:site_name" content="UCD Trampoline Club"/>
-    <meta property="og:image" content="//ucdtramp.com/images/favicon/apple-touch-icon-180x180.png"/>
+    <meta property="og:image" content="images/favicon/android-chrome-512x512.png"/>
     <meta property="og:title" content="<?= $title ?>"/>
     <meta property="og:description" content="<?= $description ?>"/>
 
@@ -50,10 +40,11 @@
     <!-- Some css in footer -->
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <!-- At the top and not the bottom with all the other js because of js in page['content'] in page.php and this was the easiest solution -->
+    <!-- Included here rather in footer.php in case of js in page['content'] in page.php and this was the easiest solution -->
     <script src="js/libs/jquery-1.11.3.min.js"></script>
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script> -->
 </head>
+
 <body>
     <header>
         <a class="header-UCD-crest" href="http://www.ucd.ie/" target="_blank"><img src="images/backgrounds/UCDlogo.jpg" alt="UCD Crest"></a>
@@ -83,7 +74,7 @@
 
     <!-- Contains everything -->
     <div class="background-container">
-        <!-- Clicking this scolls the page to the navbar -->
+        <!-- Clicking this scrolls the page to the navbar -->
         <span class="scrollToNav" title="Scroll to Navbar"></span>
         <!-- Both background elements -->
         <div class="background-sides"></div>

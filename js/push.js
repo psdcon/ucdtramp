@@ -1,4 +1,3 @@
-
 var Push = {
     API_KEY : 'AIzaSyB4__3jfqqrcViXDrpcmSfr5JkX_ObL6bY',
     GCM_ENDPOINT : 'https://android.googleapis.com/gcm/send',
@@ -157,7 +156,7 @@ var Push = {
                     }).then(function(response) {
                         // No response
                         return (response.text());
-                    }).then(function(text) {  
+                    }).then(function(text) {
                         // Request successful
                         if (text !== '')
                             Push.log('Subscription unsuccessful', text);
@@ -166,7 +165,7 @@ var Push = {
                         Push.log('Subscription failed', err);
                     });
 
-                    // We have a subcription, so call unsubscribe on it
+                    // We have a subscription, so call unsubscribe on it
                     pushSubscription.unsubscribe().then(function (successful) {
                         Push.isOff();
                     }).catch(function (e) {
@@ -194,7 +193,7 @@ var Push = {
         // Push.endpointWorkaround(subscription)
         var mergedEndpoint = Push.endpointWorkaround(subscription);
 
-        // Split the consistnently constructed endpoint url which looks like
+        // Split the consistently constructed endpoint url which looks like
         // https://android.googleapis.com/gcm/send/APA91bGQ-ididid...
         // and pull the id off the end
         var endpointSections = mergedEndpoint.split('/');
@@ -203,7 +202,7 @@ var Push = {
 
         // Send the subscription.endpoint
         // to your server and save it to send a
-        // push message at a later date        
+        // push message at a later date
         fetch('forum.ajax.php', {
             method: 'post',
             headers: {"Content-type": "application/x-www-form-urlencoded; charset=UTF-8"},
@@ -244,7 +243,7 @@ var Push = {
 Push.init();
 
 
-// Awkwardly stuck-in-down-here test for a push notification
+// Awkward, stuck-in-down-here test for a push notification
 $('.btn-send-me-push').click(function(){
     console.log("Sending test push: "+Push.subscriptionId);
     $.ajax({

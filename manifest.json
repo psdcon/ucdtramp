@@ -2,44 +2,18 @@
 	"name": "UCD Trampoline Club",
 	"short_name": "UCDTC",
 	"start_url": "https://ucdtramp.com/forum",
-	"icons": [
-		{
-			"src": "https:\/\/ucdtramp.com\/images\/favicon\/android-chrome-36x36.png",
-			"sizes": "36x36",
-			"density": "0.75",
-			"type": "image\/png"
-		},
-		{
-			"src": "https:\/\/ucdtramp.com\/images\/favicon\/android-chrome-48x48.png",
-			"sizes": "48x48",
-			"density": "1.0",
-			"type": "image\/png"
-		},
-		{
-			"src": "https:\/\/ucdtramp.com\/images\/favicon\/android-chrome-72x72.png",
-			"sizes": "72x72",
-			"density": "1.5",
-			"type": "image\/png"
-		},
-		{
-			"src": "https:\/\/ucdtramp.com\/images\/favicon\/android-chrome-96x96.png",
-			"sizes": "96x96",
-			"density": "2.0",
-			"type": "image\/png"
-		},
-		{
-			"src": "https:\/\/ucdtramp.com\/images\/favicon\/android-chrome-144x144.png",
-			"sizes": "144x144",
-			"density": "3.0",
-			"type": "image\/png"
-		},
-		{
-			"src": "https:\/\/ucdtramp.com\/images\/favicon\/android-chrome-192x192.png",
-			"sizes": "192x192",
-			"density": "4.0",
-			"type": "image\/png"
-		}
-	],
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
 	"theme_color": "#1974f2",
 	"background_color": "#1974f2",
 	"display": "fullscreen",
