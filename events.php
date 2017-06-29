@@ -12,7 +12,7 @@ function padYear($yearVar){
 // Spit out a timeline at the top of the page
 // If the month is september or more, year is 2015. Else year is 2014
 $yearStart = (date('n') > 9)? date("y"): date("y") - 1;
-$years = '';    
+$years = '';
 for ($year = $yearStart; $year > 4; $year = $year - 1) {
     $year = padYear($year);
     $nextYear = padYear($year +1);
@@ -40,7 +40,7 @@ for ($year = $yearStart; $year > 3; $year--) {
     $year = padYear($year);
     $nextYear = padYear($year + 1);
     $pageYear = $year.$nextYear; //0304
-    
+
     // Print year heading
     echo '
     <div class="row" id="20'.$year.'">
@@ -54,7 +54,7 @@ for ($year = $yearStart; $year > 3; $year--) {
     $competition = ''; $result = ''; $report = ''; $msc = ''; $committee = ''; // holds html links
 
     foreach ($types as $type) {
-        $pagesSQL = "SELECT * FROM `pages` WHERE `readperm` = 0 AND `year` = '$pageYear' AND `type` = '$type' ORDER BY `type` ASC, `year` ASC";        
+        $pagesSQL = "SELECT * FROM `pages` WHERE `readperm` = 0 AND `year` = '$pageYear' AND `type` = '$type' ORDER BY `type` ASC, `year` ASC";
         $pages = mysqli_query($db, $pagesSQL);
         while ($page = mysqli_fetch_array($pages)) {
             // If the page is msc, it wont have an event name
@@ -80,15 +80,15 @@ for ($year = $yearStart; $year > 3; $year--) {
 	        $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photos` WHERE `event` = $eventId"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
 	        $thumbnailSQL = "SELECT id,thumbnail FROM `photos` WHERE `event` = $eventId AND `id` >= ($randomIdSQL) ORDER BY `id` LIMIT 1";
 	        $thumbnail = mysqli_fetch_array(mysqli_query($db, $thumbnailSQL), MYSQLI_ASSOC);
-	        
-	        $thumbnailId = $thumbnail['id']-1;
+
+	        $thumbnailId = $thumbnail['id'];
 	        $thumbnailName = rawurlencode($thumbnail['thumbnail']);
 	        $thumbnailURL = "//ucdtramp.com/photos/$eventFolder/thumbnails/$thumbnailName";
 	        $galleryLink =  "gallery/$eventFolder/$thumbnailId";
 
 	        // Save the html for each image
 	        $photoHtml .= '
-	        <a class="event-thumbnail-link nobreak" href="'.$galleryLink.'">       
+	        <a class="event-thumbnail-link nobreak" href="'.$galleryLink.'">
 	            <img class="event-thumbnail-image" src="'.$thumbnailURL.'" alt="Thumbnail">
 	            <span class="event-thumbnail-caption">'.
 	                $thisEvent['name'].'

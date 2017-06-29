@@ -56,7 +56,6 @@ gulp.task( 'ftp', function() {
     // Selects files to sync
     var globs = [
         '*.*', // Match files in root, not folders
-        // 'dist/**', // Match folders
         'css/**',
         'fonts/**',
         'js/**',
@@ -64,7 +63,7 @@ gulp.task( 'ftp', function() {
         'templates/**',
         'includes/**',
         'files/**',
-        
+
         // Upload images folder but ignore pages folder and it's contents
         'images/**',
         '!images/pages/**',

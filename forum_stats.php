@@ -33,7 +33,7 @@ while ($post = mysqli_fetch_array($posts, MYSQL_ASSOC)) {
     }
     $total_words += $number_of_words;
     $post_length[$post['id']] = $number_of_words;
-    
+
     // Calculate Users
     $message_user = $post['sender'];
     if (isset($user_counts[$message_user])) {
@@ -42,20 +42,27 @@ while ($post = mysqli_fetch_array($posts, MYSQL_ASSOC)) {
         $user_counts[$message_user] = 1;
         $total_users++;
     }
-    
+
     // Calculate Dates
+    // [ date: ints ]
     $date = date('j M Y', $post['post_time']);
     if (isset($date_counts[$date])) {
         $date_counts[$date]++;
     } else {
         $date_counts[$date] = 1;
     }
-    
+
 }
 
 arsort($word_counts);
 arsort($user_counts);
 arsort($date_counts);
+
+$jasonsSpecialDay = "30 Jun 2016";
+$jasonsSpecialDayArr = $date_count[$jasonsSpecialDay];
+unset($jasonsSpecialDayArr);
+array_push($date_count, $jasonsSpecialDayArr);
+
 $total_posts = mysqli_num_rows($posts);
 $number_of_days = floor((time() - 1379099547) / 86400); //Time since forum wipe Sept 2013, divided by num of seconds in a day, rounded down
 $longest_post = max($post_length);
@@ -104,7 +111,7 @@ switch ($specific) {
             $htmlDatetime = date('c', $specific_post['post_time']);
             $readableTime = date('D, d M Y H:i:s', $specific_post['post_time']);
             $niceTime = nicetime($specific_post['post_time']);
-            
+
             $forumUserEmoji = html_entity_decode($specific_post['sender']);
             $forumUser = smilify($forumUserEmoji, $forumUserEmoji);
             $forumMessage = URL2link(smilify(nl2br(html_entity_decode($specific_post['message'])), $forumUserEmoji));
@@ -150,7 +157,7 @@ switch ($specific) {
         </table>
 <?php
         break;
-    
+
     case 'people':
 ?>
         <h2>People</h2>
@@ -175,7 +182,7 @@ switch ($specific) {
         </table>
 <?php
         break;
-    
+
     case 'days':
 ?>
         <h2>Days</h2>
@@ -200,7 +207,7 @@ switch ($specific) {
         </table>
 <?php
         break;
-    
+
     default:
 ?>
         <div class="row">
@@ -280,7 +287,7 @@ switch ($specific) {
 ?>
                 </table>
             </div>
-            
+
             <div class="col-sm-4">
                 <h3>People <small>(<a href="forum_stats.php?forum=<?= $forum; ?>&specific=people">Full Listing</a>)</small></h3>
                 <table class="table table-striped">
@@ -302,7 +309,7 @@ switch ($specific) {
 ?>
                 </table>
             </div>
-            
+
             <div class="col-sm-4">
                 <h3>Days <small>(<a href="forum_stats.php?forum=<?= $forum; ?>&specific=days">Full Listing</a>)</small></h3>
                 <table class="table table-striped">

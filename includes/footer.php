@@ -59,14 +59,6 @@
 
       ga('create', 'UA-41915009-3', 'ucdtramp.com');
       ga('send', 'pageview');
-
-      // Paddys day haha
-      (function nativeTreeWalker() {
-          var node, walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-          while(node = walker.nextNode()) {
-              node.nodeValue = node.nodeValue.replace(/o/, '☘');
-          }
-      })()
     </script>
 </body>
 </html>

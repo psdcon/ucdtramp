@@ -15,7 +15,7 @@
             <button type="submit" class="form-control btn btn-primary btn-post" name="action" value="editPost">
                 Update
             </button>
-            
+
         </div>
         <div class="col-sm-9 col-md-10">
             <button type="button" class="btn btn-default btn-toggle-emoji" data-toggle="collapse" data-target="#emoji-picker" aria-expanded="false" aria-controls="emoji-picker">:)</button>
@@ -43,6 +43,6 @@
 
 <!-- Files for the emoji picker -->
 <!-- Turns all the shortnames into images -->
-<script src="dist/js/emojione.js"></script>
+<script src="js/libs/emojione.js"></script>
 <!-- Puts the images into the page -->
-<script src="dist/js/emoji.js"></script>
+<script src="js/emoji.js"></script>

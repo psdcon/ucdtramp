@@ -1,5 +1,6 @@
-<?php 
-($_SERVER['SERVER_NAME'] == 'localhost')?
+<?php
+// echo $_SERVER['SERVER_NAME'];
+($_SERVER['SERVER_NAME'] == 'ucdtramp')? //
 	$db = new mysqli("localhost", "root", "", "ucdtc"): // for local environment
 	$db = new mysqli("127.0.0.1", "ucdtramp_user", "showmeALL", "ucdtramp_ucdtc"); // server environment
 

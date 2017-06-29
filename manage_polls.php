@@ -5,7 +5,7 @@ $title = 'Polls';
 // Create poll
 if (isset($_GET['action']) && $loggedIn) {
     $action = $_GET['action'];
-    
+
     if ($action == 'add') { // Show form to create new poll
         addHeader();
         echo '
@@ -63,15 +63,15 @@ if (isset($_GET['action']) && $loggedIn) {
         </form>';
 
     // When the above form is submitted, this runs and the info is added to the database
-    } else if ($action == 'Create Poll') { 
+    } else if ($action == 'Create Poll') {
         $showOnForum = (isset($_GET['showOnForum']))? 1: 0; // When set, the checkbox is checked to show the poll on the forum
         mysqli_query($db, "INSERT INTO polls (question, created, show_on_forum) VALUES('".mysqli_real_escape_string($db, ($_GET['question']))."',".time().", $showOnForum)");
         $lastId = mysqli_insert_id($db);
 
         for ($i = 1; strlen($_GET['option'.$i]) != 0; $i++) {
-            mysqli_query($db, "UPDATE polls 
+            mysqli_query($db, "UPDATE polls
                 SET option".$i." = '".(mysqli_real_escape_string($db, ($_GET['option'.$i])))."',
-                    numofoptions=".$i." 
+                    numofoptions=".$i."
                 WHERE id=".$lastId);
         }
         header("Location:polls/".$lastId);
@@ -80,7 +80,7 @@ if (isset($_GET['action']) && $loggedIn) {
 // Show/vote on Poll
 } else {
     if (isset($_REQUEST['poll'])) {
-        
+
         // User is voting
         $poll = $_REQUEST['poll'];
         if ($poll == 'latest') {
@@ -88,13 +88,14 @@ if (isset($_GET['action']) && $loggedIn) {
         } else {
             $currentpoll_query = mysqli_query($db, "SELECT * FROM polls WHERE id=$poll LIMIT 1");
         }
-        $currentpoll = mysqli_fetch_array($currentpoll_query);
-        
+        $currentpoll = mysqli_fetch_assoc($currentpoll_query);
+
+
         // Add vote in database to selected poll
         if (isset($_REQUEST['vote'])) {
             // Make sure people only vote once
             $user_ip = encode_ip($_SERVER['REMOTE_ADDR']); // encode users ip for database check
-            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
+            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll=$poll AND ip='$user_ip' LIMIT 1");
             if (mysqli_num_rows($existing_voters) > 0){
                 // If they already voted, redirect to results with a warning message
                 header("Location:polls/results/$poll&naughty=person");
@@ -108,14 +109,14 @@ if (isset($_GET['action']) && $loggedIn) {
 
                 // Add voter's ipaddress to db so they connot vote on this poll again
                 mysqli_query($db, "INSERT INTO poll_voters (poll, option_picked, ip) VALUES ($poll, $option, '$user_ip') ");
-                
+
                 // Print error if there's any database problems. This will hault the header() function
                 echo mysqli_error($db);
                 // Otherwise move onto the show results page
                 header("Location:polls/results/$poll");
             }
         }
-        
+
         // Display the results of a poll
         else if (isset($_REQUEST['results'])) {
             addHeader();
@@ -127,7 +128,7 @@ if (isset($_GET['action']) && $loggedIn) {
 
             // Check to see if the user has already voted on this poll
             $user_ip = encode_ip($_SERVER['REMOTE_ADDR']); // encode users ip for database check
-            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
+            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll=$poll AND ip='$user_ip' LIMIT 1");
             $tableFooter = '';
             if (mysqli_num_rows($existing_voters) == 0){
                 // Not voted yet
@@ -137,7 +138,7 @@ if (isset($_GET['action']) && $loggedIn) {
                 // Aleady voted
                 $tableFooter = '<a class="btn btn-default" href="manage_polls">Polls Menu</a>';
             }
-            
+
             if (isset($_REQUEST['naughty'])) {
                 echo '
                 <h4 class="alert alert-danger">
@@ -178,19 +179,19 @@ if (isset($_GET['action']) && $loggedIn) {
                 <tfoot>
                     <tr>
                         <td>'.
-                            $tableFooter.'    
+                            $tableFooter.'
                         </td>
                     </tr>
                 </tfoot>
             </table>';
         }
-        
+
         // Voting form
         else {
             addHeader();
             // Check to see if the user has already voted on this poll
             $user_ip = encode_ip($_SERVER['REMOTE_ADDR']); // encode users ip for database check
-            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll='$poll' AND ip='$user_ip' LIMIT 1");
+            $existing_voters = mysqli_query($db, "SELECT * FROM poll_voters WHERE poll=$poll AND ip='$user_ip' LIMIT 1");
             $tableFooter = '';
             if (mysqli_num_rows($existing_voters) == 0){
                 // Not voted yet
@@ -233,15 +234,15 @@ if (isset($_GET['action']) && $loggedIn) {
                     <tfoot>
                         <tr>
                             <td>'.
-                                $tableFooter.'    
+                                $tableFooter.'
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </form>';
         }
-        
-    // List all polls   
+
+    // List all polls
     } else {
         addHeader();
         $polls = mysqli_query($db, "SELECT * FROM polls ORDER BY id DESC");
@@ -250,7 +251,7 @@ if (isset($_GET['action']) && $loggedIn) {
         <h2>
             Polls
         </h2>';
-        
+
         if ($loggedIn) {
             echo '
             <h4>
@@ -259,7 +260,7 @@ if (isset($_GET['action']) && $loggedIn) {
                 </a>
             </h4>';
         }
-        
+
         echo '
         <style>
             th {
@@ -312,11 +313,11 @@ if (isset($_GET['action']) && $loggedIn) {
                 <th style="text-align:left;">Question</th>
             </tr>
             <tbody>';
-        
+
         // List all polls with view results/vote buttons
-        while ($poll = mysqli_fetch_array($polls)) {
+        while ($poll = mysqli_fetch_assoc($polls)) {
             echo'
-                <tr> 
+                <tr>
                     <td>'.$poll['id'].'</td>
                     <td>
                         <a href="polls/results/'.$poll['id'].'" title="View Results"><i class="fa fa-bar-chart-o"></i> Results</a>
@@ -332,7 +333,7 @@ if (isset($_GET['action']) && $loggedIn) {
         }
         echo '
             </tbody>
-        </table>';        
+        </table>';
     }
 }
 addFooter();

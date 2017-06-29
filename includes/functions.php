@@ -1,6 +1,7 @@
 <?php
 require_once ('db.php');
 
+
 ################################################
 #            EMOJIONE CODE
 # include the PHP library (if not autoloaded)
@@ -19,25 +20,27 @@ $emojione->ascii = true;
 $emojione->imagePathSVGSprites = 'images/emoji/emojione/emojione.sprites.svg';
 ################################################
 
+
 $userPosition = '';
 $loggedIn = false;
 if(isset($_COOKIE['user'])){ // checks for users cookie
     $cookieuser = $_COOKIE['user']; $cookiepass = $_COOKIE['pass']; // Store cookie info
-    $dbuser = mysqli_query($db, "SELECT * FROM committee_users WHERE user = '$cookieuser'") or die(mysqli_error()); 
-        
+    $dbuser = mysqli_query($db, "SELECT * FROM committee_users WHERE user = '$cookieuser'") or die(mysqli_error());
+
     while($info = mysqli_fetch_array($dbuser)){
         if ($cookiepass == $info['pass']){
             $loggedIn = true;
-            $userPosition = $info['position'];               
+            $userPosition = $info['position'];
         }
     }
 }
 // Theme stuff
-$theme = false;
+// $theme = false;
+// $theme = "starwars";
 // $theme = "christmas";
 
 function addHeader() {
-    // These variables are used in the header.php file. 
+    // These variables are used in the header.php file.
     // They're given values before addheader function call in all other php files
     global $title,
            $description,
@@ -51,25 +54,25 @@ function addHeader() {
 
 function addFooter() {
     global $db, // db connection is closed in footer
-           $theme; 
+           $theme;
     include('includes/footer.php');
 }
 
-function nicetime($date){ // makes nice date on forum posts    
+function nicetime($date){ // makes nice date on forum posts
     $periods         = array("second", "minute", "hour", "day", "week", "month", "year", "decade");
     $lengths         = array("60","60","24","7","4.35","12","10");
-    
+
     $now             = time();
     $unix_date       = ($date);
-    
+
        // check validity of date
-    if(empty($unix_date)) {    
+    if(empty($unix_date)) {
         return "Bad date";
     }
-   
+
     $difference = $now - $unix_date;
     $tense = "ago";
-   
+
     for($j = 0; $difference >= $lengths[$j] && $j < count($lengths)-1; $j++) {
         $difference /= $lengths[$j];
     }
@@ -117,20 +120,20 @@ function URL2link($text){
     $youtube_regex='(https?\:\/\/)?(www\.youtube\.com/watch\?v=|youtu\.?be)/?(\S{11})';
     $youtube_embed='<div class="embed-bounding-box"><div class="embed-responsive"><iframe class="embed-responsive-item" src="https://www.youtube.com/embed/$3" allowfullscreen></iframe></div></div>';
     $text = preg_replace('#'.$youtube_regex.'#i',$youtube_embed, $text);
-    
+
     // Show img when a jpg, gif or png are posted
     // $img_regex='((https?:)([/|.|\w|])*\.(jpg|gif|png|svg))';
     $img_regex='((https?:)([/.\w-])*\.(jpg|gif|png|svg))';
     $img_replace='<a class="post-image" href="$1" target="_blank"><img src="$1"></a>';
-    $text = preg_replace('#'.$img_regex.'#i',$img_replace, $text);  
-    
-    // If url wasnt already recognised as a youtube link or an image, make it a clickable link        
+    $text = preg_replace('#'.$img_regex.'#i',$img_replace, $text);
+
+    // If url wasnt already recognised as a youtube link or an image, make it a clickable link
     $URL_reg='((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)';
     if(!preg_match('!src="'.$URL_reg.'!i',$text)){ //if a url is not already part of a src (preceded by src=") then make it an anchor
         $text = preg_replace('!'.$URL_reg.'!i', '<a target="_blank" href="$1">$1</a>', $text);
         // TODO CHeck for https? and add if not there
     }
-    
+
     return $text;
 }
 
@@ -242,7 +245,7 @@ $ucdtcSmiliesXmas = array(
 // Change smilies to images
 function smilify($text, $poster) {
     global $ucdtcSmilies;
-    global $emojione;   
+    global $emojione;
 
     // Formatting text to html first
     // Colour codes
@@ -257,7 +260,7 @@ function smilify($text, $poster) {
     $text = preg_replace('/:thesecretcolour:/i', '<span class="forum-secret-color">', $text);
     $text = preg_replace('/:endcolour:/i', '</span>', $text);
     $text = preg_replace('/:endc:/i', '</span>', $text);
-    
+
     // Formatting codes
     $text = preg_replace('/\*\*(.*)\*\*/Uis', '<strong>$1</strong>', $text); // U regex modifier makes match ungreedy so it stops at the first match
     $text = preg_replace('/\*(.*)\*/Uis', '<em>$1</em>', $text);
@@ -271,11 +274,11 @@ function smilify($text, $poster) {
     $text = preg_replace('/D.eirdre/i', 'BJ', $text);
     $text = preg_replace('/deirdre/i', 'BJ', $text);
     $text = preg_replace('/deirdre/i', 'BJ', $text);
-    
+
     $text = preg_replace('/Cormac H/i', 'Norman', $text);
-    
+
     $text = preg_replace('/Hannah the Hun/i', 'Attilla the Hun', $text);
-    
+
 
     // Change colour of Orla's name
     //$colors = ['#FF0000','#0000FF','#32CD32','#FF1493','#C71585','#FF4500','#COCOCO'];
@@ -290,26 +293,26 @@ function smilify($text, $poster) {
     $text = preg_replace('/longfordmorelikeshortford/i', $glasgowsMessage, $text);
     $text = preg_replace('/mariannedoesntacuallysuckexceptshedoes/i', $glasgowsMessage, $text);
     $text = preg_replace('/https:\/\/ucdtramp.com\/page\/justletgoalreadyoldman/i', $glasgowsMessage, $text);
-    
+
     $text = preg_replace('/:colmstar:/i', '<a href="page/colmwillbringshameonhisfamily"><img title="not your averge joe soap" class="forum-original-emoji" src="images/emoji/normal-smilies/pstar.gif" alt="Purple star"></a>', $text);
 
     // ForumUser-only replacements, not site-wide
     if($poster == 'Sinead'){$text = preg_replace('/Sinead/i', 'Flaps', $text);}
-    
+
     if($poster == 'Jordan'){$text = preg_replace('/Jordan/i', 'Obama', $text);}
     if($poster == 'J o r d a n'){$text = preg_replace('/J o r d a n/i', 'Obama', $text);}
     if($poster == 'J_o_r_d_a_n'){$text = preg_replace('/J_o_r_d_a_n/i', 'Obama', $text);}
-    
+
 
     if($poster == 'Colm'){$text = preg_replace('/C:pstar:o:pstar:l:pstar:m/i', 'Obama', $text);}
 
     // Smiley face image replacements from the array defined above
     for ($i = 0; $i < count($ucdtcSmilies); $i++){
-        $original[] = "/".preg_quote($ucdtcSmilies[$i][0])."/i"; 
+        $original[] = "/".preg_quote($ucdtcSmilies[$i][0])."/i";
         $replacement[] = '<img class="forum-original-emoji" src="images/emoji/'.$ucdtcSmilies[$i][1].'" alt="'.$ucdtcSmilies[$i][2].'"/>';
     }
     $text = preg_replace($original, $replacement, $text);
-    
+
     //
     return $emojione->shortnameToImage($text);
 }

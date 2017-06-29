@@ -29,8 +29,8 @@
     <meta name="msapplication-TileImage" content="//ucdtramp.com/images/favicon/mstile-144x144.png">
     <!-- <meta name="theme-color" content="#1971ef"> Android colour -->
     <!-- When using localhost, set the base to be the name of the wamp/www/foler ucdtramp -->
-    <?= ($_SERVER['SERVER_NAME'] == 'localhost')?
-        '<BASE href="/ucdtramp/">':
+    <?= ($_SERVER['SERVER_NAME'] == 'ucdtramp')?
+        '<BASE href="/">':
         '<BASE href="//ucdtramp.com/">';
     ?>
 
@@ -38,7 +38,7 @@
     <meta property="og:site_name" content="UCD Trampoline Club"/>
     <meta property="og:image" content="//ucdtramp.com/images/favicon/apple-touch-icon-180x180.png"/>
     <meta property="og:title" content="<?= $title ?>"/>
-    <meta property="og:description" content="<?= $description ?>"/>        
+    <meta property="og:description" content="<?= $description ?>"/>
 
     <!-- CSS Links -->
     <!-- <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"> -->
@@ -53,7 +53,7 @@
     <script src="js/libs/jquery-1.11.3.min.js"></script>
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script> -->
 </head>
-<body>    
+<body>
     <header>
         <a class="header-UCD-crest" href="http://www.ucd.ie/" target="_blank"><img src="images/backgrounds/UCDlogo.jpg" alt="UCD Crest"></a>
         <?php
@@ -70,15 +70,42 @@
             </div>';
         }
         ?>
-        
-        <div class="header-logo">
-            <?php 
-                if ($theme)
-                    echo '<img style="width:20%" class="header-logo-image ghost" src="themes/'.$theme.'/ghost.png" alt="UCDTC Ghost">';
-                else
-                    echo '<img class="header-logo-image animated zoomInDown animation-delay-5" src="images/backgrounds/men.png" alt="UCDTC Evolutoion logo">';
+        <div class="header-logo" style="position: relative;">
+            <!-- <div style="perspective: 230px;position: absolute;top: 71%;width: 100%;">
+            <div class="ucdtc" style="
+                background: white;
+                text-align: center;
+                font-size: 6.8em;
+                transform: rotateX(20deg);
+                color: #fe6969;
+            ">UCDTC</div>
+ -->
+            <!-- <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/SplitText.min.js"></script> -->
+            <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenMax.min.js"></script> -->
+
+<!--             <script>
+              var tl = new TimelineLite,
+                mySplitText = new SplitText(".ucdtc", {type:"words,chars"}),
+                chars = mySplitText.chars; //an array of all the divs that wrap each character
+
+              tl.staggerFrom(
+                chars,
+                1,
+                {
+                  rotationY:360
+                }, 0.01, "+=0"
+              );
+
+              document.getElementsByClassName("ucdtc")[0].onclick = function() {
+                tl.restart();
+              }
+            </script> -->
+            <?php
+                // if ($theme)
+                //     echo '<img style="width:20%" class="header-logo-image ghost" src="themes/'.$theme.'/ghost.png" alt="UCDTC Ghost">';
+                // else
+                    echo '<img class="header-logo-image animated zoomInDown animation-delay-5" src="images/backgrounds/men.png" alt="UCDTC Evolutoion logo" style="position: absolute;top: 0;">';
             ?>
-            
         </div>
     </header>
 
@@ -127,7 +154,7 @@
                     <li>
                         <a href="forum" title="Where it's at!" style="position:relative;">FORUM
                             <span class="lastPostTime"></span>
-                        </a> 
+                        </a>
                     </li>
                     <li><a href="gallery" title="Photo Gallery">Gallery</a></li>
                     <li class="dropdown">
@@ -143,11 +170,11 @@
                             <li><a href="page/squad">Squad</a></li>
                             <li><a href="polls">Polls</a></li>
                         </ul>
-                    </li>                    
+                    </li>
                     <li><a href="page/contact" title="Talk to us! Please...">Contact</a></li>
                   </ul>
                 </div><!-- /.navbar-collapse -->
               </div><!-- /.container-fluid -->
             </nav>
 
-            <div class="content-padding">    
+            <div class="content-padding">

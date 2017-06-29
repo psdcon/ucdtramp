@@ -1,0 +1,100 @@
+
+/* Mobile backgrounds */
+.header-logo {
+    background-image: url('mheader.jpg');
+}
+.background-sides {
+    background-image: url('msidestop.png'),
+    url('msidesrepeat.png');
+}
+
+
+/* Desktop backgrounds */
+@media (min-width: 768px) {
+	.header-logo {
+	    background-image: url('header.jpg');
+	}
+	/***********************************************************
+	                           BACKGROUNDS
+	***********************************************************/
+	.background-sides {
+	    /*background: url('sidestop.png') 0 0/100% no-repeat,*/
+	    /*url('sidesrepeat.png') 0 0/100% repeat-y;*/
+	    background-image: url('sidestop.png'), url('sidesrepeat.png');
+	}
+}
+
+/* Cursor */
+/* Start http://www.cursors-4u.com */
+body, a:hover {cursor: url(http://cur.cursors-4u.net/others/oth-1/oth24.cur), progress !important;}
+/* End http://www.cursors-4u.com */
+
+/* General styles*/
+.navbar-yellow {
+	/* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#258dc8+0,258dc8+100;Blue+Flat+%231 */
+    background: #258dc8; /* Old browsers */
+    background: -moz-linear-gradient(top,  #258dc8 0%, #258dc8 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top,  #258dc8 0%,#258dc8 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom,  #258dc8 0%,#258dc8 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#258dc8', endColorstr='#258dc8',GradientType=0 ); /* IE6-9 */
+}
+.header-logo {
+	position: relative;
+}
+
+/*Buttons and bootstrap stuff*/
+.form-control:focus {
+	border-color: #FF6819;
+}
+.form-control {
+	border-color: black;
+}
+
+.btn-default {
+    color: white;
+    background-color: black;
+    border-color: #FF6819;
+}
+.btn-default.active, .btn-default.focus, .btn-default:active, .btn-default:focus, .btn-default:hover, .open>.dropdown-toggle.btn-default {
+    color: white;
+    background-color: black;
+    border-color: #FF6819;
+}
+
+.btn-primary, .btn-primary.disabled, .btn-primary.disabled.active, .btn-primary.disabled.focus, .btn-primary.disabled:active, .btn-primary.disabled:focus, .btn-primary.disabled:hover, .btn-primary[disabled], .btn-primary[disabled].active, .btn-primary[disabled].focus, .btn-primary[disabled]:active, .btn-primary[disabled]:focus, .btn-primary[disabled]:hover, fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary.active, fieldset[disabled] .btn-primary.focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:hover {
+    background-color: #FF6819;
+    border-color: orangered;
+}
+.btn-primary.active, .btn-primary.focus, .btn-primary:active, .btn-primary:focus, .btn-primary:hover, .open>.dropdown-toggle.btn-primary {
+	color: #fff;
+    background-color: orangered;
+	border-color: #FF6819;
+}
+
+.pagination>li>a, .pagination>li>span {
+    background-color: #fff;
+    color: #FF6819;
+}
+.pagination>li>a:focus, .pagination>li>a:hover, .pagination>li>span:focus, .pagination>li>span:hover {
+    color: white;
+    background-color: black;
+    border-color: #FF6819;
+}
+.pagination>.active>a, .pagination>.active>a:focus, .pagination>.active>a:hover, .pagination>.active>span, .pagination>.active>span:focus, .pagination>.active>span:hover {
+    color: #fff;
+    background-color: black;
+    border-color: #FF6819;
+}
+/*Msc website stuff*/
+.news-item__heading {
+    border-bottom: 2px solid #FF6819;
+}
+.post-header {
+    border-bottom: 2px solid orange;
+}
+a, .btn-link {
+    box-shadow: 0 4px 4px -4px #337ab7;
+}
+a:focus, a:hover, .btn-link:focus, .btn-link:hover {
+    box-shadow: 0 4px 2px -2px #337ab7;
+}

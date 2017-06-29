@@ -25,7 +25,7 @@ if (isset($_GET['edit'])){
         $forumId = $post['forum'];
         $forumUser = $post['sender'];
         $forumMessage = $post['message'];
-        
+
         // Display form
         $title="Edit Post";
         addHeader();
@@ -48,7 +48,7 @@ if (isset($_GET['delete'])) {
         // Move post and it's replies to deleted forum
         mysqli_query($db, "UPDATE forum_posts SET forum = 0 WHERE id = $postId LIMIT 1");
         mysqli_query($db, "UPDATE forum_posts SET forum = 0 WHERE parent_id = $postId");
-        
+
         if (mysqli_error($db))
             exit(mysqli_error($db));
     }
@@ -57,22 +57,21 @@ if (isset($_GET['delete'])) {
 }
 
 // Check if an auto generated message should be added to public forum
-$autoGenTimer = time() - 60*60*24; // seconds in 24hours
-$autoGenQuery = mysqli_query($db, "SELECT * FROM forum_posts WHERE forum = 1 ORDER BY id DESC LIMIT 1");
-$autoGenLastPost = mysqli_fetch_array($autoGenQuery);
+$autoGenTimer = time() - 60*60*24; // time since epoch 24 hours ago
+$autoGenLastPost = mysqli_fetch_array(mysqli_query($db, "SELECT post_time FROM forum_posts WHERE forum = 1 ORDER BY id DESC LIMIT 1"), MYSQLI_ASSOC);
 
 // If the time of the last post was more than 24 hours ago, add auto gen'd post
 if ($autoGenTimer > $autoGenLastPost['post_time'] && $forumId == 1) {
     // Get a random photo from the punishment photos
-    // This doesnt work anemore $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photo_punishment` WHERE `used` < 2 AND `id` > 364"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
+    // This doesn't work any more $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photo_punishment` WHERE `used` < 2 AND `id` > 364"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
     // $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 2  AND `id` >= ($randomIdSQL) ORDER BY `id` LIMIT 1";
     $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 1 AND `id` > 365 ORDER BY `id` LIMIT 1";
     $punishmentPhoto = mysqli_fetch_array(mysqli_query($db, $punishmentSQL), MYSQLI_ASSOC);
     $autoMessage = "
         ************************** AUTOMATICALLY GENERATED MESSAGE **************************
-        
+
         It's been 24 hours again. Here's a photo you've actually never seen before ;)...
-        
+
         https://ucdtramp.com/images/punishment_photos/".$punishmentPhoto['img'];
 
     // Update the used count of this photo
@@ -93,12 +92,12 @@ if ($autoGenTimer > $autoGenLastPost['post_time'] && $forumId == 1) {
 }
 
 
-// Get start for pagination. It's artifically set +1 for prettier urls
+// Get start for pagination. It's artificially set +1 for prettier urls
 $paginationPage = (isset($_GET['paginationPage'])) ? $_GET['paginationPage'] : 1;
 $paginationStartIndex = ($paginationPage -1) * $forumDetails['posts_per_page'];
 
 // Get posts for the page
-$posts = mysqli_query($db, "SELECT * FROM forum_posts WHERE forum = $forumId AND parent_id = 0 ORDER BY id DESC 
+$posts = mysqli_query($db, "SELECT * FROM forum_posts WHERE forum = $forumId AND parent_id = 0 ORDER BY id DESC
     LIMIT ".$forumDetails['posts_per_page']." OFFSET $paginationStartIndex");
 
 // Used in the javascript to find new posts. TODO: Get id from post elements #id
@@ -134,7 +133,7 @@ addHeader();
             ';
     }
     else if ($forumId == '1') {
-        // Check for a forum notice set in the comittee section
+        // Check for a forum notice set in the committee section
         $noticeContents = mysqli_fetch_array(mysqli_query($db, "SELECT pagecontent FROM pages WHERE pageurl='forumnotice'"))['pagecontent'];
         if ($noticeContents != '') {
             echo '
@@ -146,25 +145,25 @@ addHeader();
         $poll = mysqli_fetch_array(mysqli_query($db, "SELECT `id`,`created`,`question` FROM `polls` WHERE `show_on_forum` = 1 ORDER BY `polls`.`id` DESC LIMIT 1 "), MYSQL_ASSOC);
         // Set time to that day to, 00h:00m, first thing in the morning so that the poll will disappear at midnight
         $pollDatetime = new DateTime('@'.$poll['created']);
-        $pollDatetime->setTime(0,0); 
+        $pollDatetime->setTime(0,0);
         $pollTimestamp = $pollDatetime->getTimestamp();
 
         // NUmber of seconds in 3 days, take away the time since the poll was created
         $timeLeft =  (60*60*24*3) - (time() - $pollTimestamp);
-        
+
         if($timeLeft > 0){
             echo '
                 <div class="alert forum-notice" title="Notice!">
                     <small style="cursor:pointer" title="This will disappear when the time reaches 0" class="pull-right">'.seconds_to_time($timeLeft).'</small>
                     <img src="images/emoji/normal-smilies/pstar.gif" alt="Pstar">
-                    New Poll! 
+                    New Poll!
                     <img src="images/emoji/normal-smilies/pstar.gif" alt="Pstar">
                     <a href="polls/'.$poll['id'].'">'.$poll['question'].'</a>
 
                 </div>';
         }
     }
-    // used on commapps.php page to show how many posts user hasnt seen
+    // used on commapps.php page to show how many posts user hasn't seen
     else if ($forumId == '2') {
         mysqli_query($db, "UPDATE committee_users SET commforum='".time()."' WHERE user='".$_COOKIE["user"]."'");
     }
@@ -209,14 +208,14 @@ addHeader();
     </div>
 </form>
 
-<!-- Dropdowns for emoji, file uploader and help-->
+<!-- Dropdowns for emoji, file uploader (not implemented) and help-->
 <div class="row">
     <div class="col-xs-12 well collapse" id="emoji-picker">
         <?php include 'templates/emoji_picker.php'; ?>
     </div>
     <div class="col-xs-12 collapse well" id="push-notifications" style="padding:1em;">
         <p>
-            If you would like to recieve notifications about new forum posts, click the toggle below. This feature is only available in <strong>Chrome</strong> 42 or higher and is not yet supported at all on iOS.
+            If you would like to receive notifications about new forum posts, click the toggle below. This feature is only available in <strong>Chrome</strong> 42 or higher and is not yet supported at all on iOS.
         </p>
         <div class="material-checkbox">
             <input type="checkbox" id="material-checkbox" class="material-checkbox__box hidden" disabled/>
@@ -288,7 +287,7 @@ addHeader();
     <?php
     // Loop and print out each forum post
     while ($postResult = mysqli_fetch_array($posts, MYSQL_ASSOC)) {
-        // Turns the sql array into a properly formated post array
+        // Turns the sql array into a properly formatted post array
         $post = mysql2AssocArray($postResult);
         $postHtml = post2HTML($post);
         // Get all the replies for this post
@@ -369,7 +368,7 @@ for ($i = 1; $i < $num_pages+1; $i++) {
 <?php
 addFooter();
 ?>
-<!-- Files for forum live undates and push notifications -->
+<!-- Files for forum live updates and push notifications -->
 <script src="js/libs/jquery.timeago.js"></script>
 <script src="js/libs/jquery.titleAlert.js"></script>
 <script src="js/push.js"></script>
