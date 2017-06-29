@@ -2,6 +2,8 @@
 /***********************************************************
                            GENERAL
 ***********************************************************/
+/* body, a:hover {cursor: url(http://cur.cursors-4u.net/others/oth-1/oth24.cur), progress !important;} */
+
 .h4, h4 {
     margin-top: 24px;
     margin-bottom: 10px;
@@ -801,7 +803,7 @@ textarea {
 /*Added by regex in functions.php*/
 .post-image {
     display: block;
-    max-width: 400px;
+    max-width: 600px;
 }
 .post-image img {
     width: 100%;
@@ -860,7 +862,7 @@ textarea {
     text-decoration: underline;
 }
 
-.highlight {
+/* .highlight {
     border-radius: 4px;
     background-color: rgba(255,204,0,0.8);
 }
@@ -883,7 +885,7 @@ textarea {
     100% {
         background-color: transparent;
     }
-}
+} */
 /***********************************************************
                            GALLERY GRID
 ***********************************************************/

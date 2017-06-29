@@ -27,7 +27,8 @@
     <meta name="application-name" content="UCDTC">
     <meta name="msapplication-TileColor" content="#2b5797">
     <meta name="msapplication-TileImage" content="//ucdtramp.com/images/favicon/mstile-144x144.png">
-    <!-- <meta name="theme-color" content="#1971ef"> Android colour -->
+    <meta name="theme-color" content="#1974f2"> <!-- Android colour -->
+
     <!-- When using localhost, set the base to be the name of the wamp/www/foler ucdtramp -->
     <?= ($_SERVER['SERVER_NAME'] == 'ucdtramp')?
         '<BASE href="/">':
@@ -71,35 +72,6 @@
         }
         ?>
         <div class="header-logo" style="position: relative;">
-            <!-- <div style="perspective: 230px;position: absolute;top: 71%;width: 100%;">
-            <div class="ucdtc" style="
-                background: white;
-                text-align: center;
-                font-size: 6.8em;
-                transform: rotateX(20deg);
-                color: #fe6969;
-            ">UCDTC</div>
- -->
-            <!-- <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/SplitText.min.js"></script> -->
-            <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenMax.min.js"></script> -->
-
-<!--             <script>
-              var tl = new TimelineLite,
-                mySplitText = new SplitText(".ucdtc", {type:"words,chars"}),
-                chars = mySplitText.chars; //an array of all the divs that wrap each character
-
-              tl.staggerFrom(
-                chars,
-                1,
-                {
-                  rotationY:360
-                }, 0.01, "+=0"
-              );
-
-              document.getElementsByClassName("ucdtc")[0].onclick = function() {
-                tl.restart();
-              }
-            </script> -->
             <?php
                 // if ($theme)
                 //     echo '<img style="width:20%" class="header-logo-image ghost" src="themes/'.$theme.'/ghost.png" alt="UCDTC Ghost">';

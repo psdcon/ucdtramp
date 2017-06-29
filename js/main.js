@@ -1,3 +1,7 @@
+
+/***********************************************************
+               RUN ON EVERY PAGE
+***********************************************************/
 $(document).ready(function () {
 
     // Internet explorer check
@@ -51,7 +55,7 @@ $(document).ready(function () {
             scrollTop: $('.content').offset().top
         }, 1000);
     });
-    
+
     // Toggles the mobile dropdown nav bar without animating height
     $('*[data-toggle="showhide"]').click(function () {
         var nav = $(this).data('target'); // uses target attribute
@@ -69,10 +73,7 @@ $(document).ready(function () {
     /***********************************************************
                                News
     ***********************************************************/
-    $(function () {
-        // renders title attribute of snapchat icon as html image
-        $('.soi-snapchat').tooltip({html:true});
-    });
+
 
     /***********************************************************
                                ABOUT
@@ -120,7 +121,7 @@ var Forum = {
         $('.btn-post').prop('disabled', true); // Disable initally
         $(document).on('input', '.forum-user', this.handlers.enablePostButton);
         $(document).on('input', '.forum-message', this.handlers.enablePostButton);
-        
+
         // Submit post handlers
         $('.post-form').on('submit', this.handlers.submitPost);
         $(document).on('submit', '.reply-form', this.handlers.submitPost);
@@ -153,7 +154,7 @@ var Forum = {
         },
         submitPost: function(event){
             Forum.submittingPost = true; // Tell checkNewForumPost to wait
-            var $postForm = $(this); 
+            var $postForm = $(this);
             var $postBtn = $postForm.find('.btn-post');
             var $forumUserEl = $postForm.find('.forum-user');
             var $forumMessageEl = $postForm.find('.forum-message');
@@ -211,7 +212,7 @@ var Forum = {
                     }
                 },
                 // An unexpected error from the server; json parse probably failed
-                error: function(jqXHR, textStatus, errorThrown) { 
+                error: function(jqXHR, textStatus, errorThrown) {
                     Forum.error('Unexpected error submitting post: ' + jqXHR.responseText);
                 }
             });
@@ -258,7 +259,7 @@ var Forum = {
             $likeCountEl.addClass('animated bounce');
             $likeCountEl.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
                 $likeCountEl.removeClass('animated bounce');
-            });        
+            });
         },
         likeButtonClick: function() {
             // Don't increment like for an already liked post
@@ -274,13 +275,13 @@ var Forum = {
             $likeImg.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
                 $likeImg.removeClass('animated swing not-liked');
             });
-            
+
             // Incement like count on dom on DOM
             $likeCountEl.text(likeCount+1);
             $likeCountEl.addClass('animated bounce');
             $likeCountEl.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
                 $likeCountEl.removeClass('animated bounce');
-            }); 
+            });
 
             // Add like to database
             // console.log("Liking post "+ postId);
@@ -308,7 +309,7 @@ var Forum = {
                 if (scrollTimer) {
                     clearTimeout(scrollTimer); // clear previous pending timer
                 }
-                scrollTimer = setTimeout(function(){                    
+                scrollTimer = setTimeout(function(){
                     if (elementInViewport($thisNewPost)){
                         $thisNewPost.addClass('fade-highlight');
 
@@ -320,7 +321,7 @@ var Forum = {
                                 $scrollToClick.remove(); // remove post after animation has finished
                                 $('.new-post-notification').html('');
                             });
-                        }   
+                        }
                         else{ // If not the last scroll click left, pull it out
                             $scrollToClick.remove(); // remove html of click
                         }
@@ -346,10 +347,10 @@ var Forum = {
 
     // Adds new post to the DOM
     addPost: function(post){
-       
+
         // Add post to page
         var $newPostEl = $(post.postHTML); // keeps a jQuery reference of the new psot in the DOM after the post's been added
-        if (post.parentPostId == '0'){ 
+        if (post.parentPostId == '0'){
             $('#posts-container').prepend($newPostEl); // Add to top of page
         }
         else { // When reply, delete reply form.
@@ -362,14 +363,14 @@ var Forum = {
         // Return object reference
         return $newPostEl;
     },
-    
+
     /***** DYNAMIC POSTS (and likes?) ****/
     checkNewForumPost: function(){
-        // Only check for new post after a new post has been submitted 
+        // Only check for new post after a new post has been submitted
         // so that newestPostsId can be updated
         if (Forum.submittingPost)
             return;
-        
+
         $.ajax({
             type: 'POST',
             url : 'forum.ajax.php',
@@ -389,8 +390,8 @@ var Forum = {
                         // Use query element reference to edit post after it's added
                         Forum.unseenPosts[unseenLength-1].addClass('highlight');
                         // Used to check if post loaded out of view
-                        Forum.unseenPosts[unseenLength-1].alreadyHandlered = false; 
-                        
+                        Forum.unseenPosts[unseenLength-1].alreadyHandlered = false;
+
                         // Update the id to the MAX post id. if because might receive lower number
                         if (thatPost.id > Forum.newestPostsId)
                             Forum.newestPostsId = thatPost.id;
@@ -445,7 +446,7 @@ var Forum = {
                             }
                         }
                     };
-                    
+
                     postInViewHandler(); // Run to see if tab is in view
                     tabVisible(postInViewHandler); // Else set the tab listener and when the tab comes into view, then run
                 }
@@ -454,7 +455,7 @@ var Forum = {
                 }
             },
             // An error from the server;
-            error: function(jqXHR, textStatus, errorThrown) { 
+            error: function(jqXHR, textStatus, errorThrown) {
                 // '' means no new posts on server. Anything else would be some unexpected php error which failed the json parse
                 if(jqXHR.responseText.trim() !== ''){
                     Forum.error('Unexpected error fetching new posts: ' + jqXHR.responseText);
@@ -470,13 +471,13 @@ var Forum = {
     },
     // Forum.error function
     error: function(errorMessage){
-        var messageHtml = 
+        var messageHtml =
             '<div class="alert alert-danger" role="alert">'+
                 '<strong>Oops!</strong> Something went wrong. Please show the error below to the Webmaster.<br>'+
                 '<pre>' + errorMessage + '</pre>' +
             '</div>';
         $('#posts-container').prepend(messageHtml);
-        
+
         Forum.stopCheckNewForumPost();
     },
     stopCheckNewForumPost: function(){
@@ -542,7 +543,7 @@ var tabVisible = (function(){
         webkitHidden: "webkitvisibilitychange",
         mozHidden: "mozvisibilitychange",
         msHidden: "msvisibilitychange"
-    }; // eventKery assigned the relevent listener 
+    }; // eventKery assigned the relevent listener
     for (stateKey in keys) {
         if (stateKey in document) {
             eventKey = keys[stateKey];
@@ -580,7 +581,7 @@ function attemptUserLogin(){
     }
 
     $.post( // shorthand jQuery $.ajax type:POST func call
-        "includes/process_login.php", 
+        "includes/process_login.php",
         "action=login&user="+loginUser+"&pass="+loginPass,
         function(response){ // if successful, hide form, show links. else show error
             if (response == 1){

@@ -572,9 +572,9 @@ switch ($action) {
                 <?php
                 while ($current_member = mysqli_fetch_array($members)) {
 
-                    if (strlen($current_member['mobile']) == 9 && $current_member['mobile'][0] == "8"){
-                        $current_member['mobile']="0".$current_member['mobile'];
-                    }
+                    
+                    $current_member['mobile'] = $current_member['mobile'] == "0"? "None": $current_member['mobile'];
+                    $current_member['home_phone'] = $current_member['home_phone'] == "0"? "None": $current_member['home_phone'];
 
                     $current_member['formatted_dob'] = date("d/m/Y", $current_member['dob']);
                     echo "

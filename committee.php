@@ -15,17 +15,25 @@ while ($row = mysqli_fetch_assoc($query)) {
 }
 
 $postsSince = mysqli_fetch_array(mysqli_query($db, "SELECT count(1) AS c FROM forum_posts WHERE forum=2 AND post_time>$lastcommforumview ORDER BY id DESC"))['c'];
+$postsSince = ($postsSince > 0)? '<span style="font-size:3em;">'.$postsSince."</span>": 0;
 $lastlogin = nicetime($lastlogin);
 if ($lastlogin == 'Bad date') $lastlogin = 'never';
 
-$title = 'Committee Section';
+$title = 'Committee Area';
 addHeader();
 ?>
 <div>
-    Welcome to the new Committee Section <b><?= $user ?></b>.<br>
-    Num logins: <?= $numlogins ?> <br>
-    Last login: <?= $lastlogin ?> <br>
-    New committee posts: <?= $postsSince ?>
+    <h2>Committee Area</h3>
+    <h4><i class="fa fa-user-secret" aria-hidden="true"></i> <?= $user ?>, Your Stats</h4>
+    <ul>
+        <li>
+            Num logins: <?= $numlogins ?>
+        </li>
+        <li>
+            Last login: <?= $lastlogin ?>
+        </li>
+        <li><a href="forum/2">Committee Forum</a> posts you haven't seen: <?= $postsSince ?></li>
+    </ul>
 </div>
 <style>
     .committee-actions a {
@@ -33,22 +41,22 @@ addHeader();
     }
 </style>
 
-    <h4>Create</h4>
+    <h4><i class="fa fa-paint-brush" aria-hidden="true"></i> Create</h4>
     <ul>
         <li><a href="manage_news.php">Manage News</a> </li>
         <li><a href="manage_polls.php">Manage Polls</a> </li>
         <li><a href="https://mail.google.com/mail/u/?authuser=ask.a.tramp@ucdtramp.com">Ask.a.Tramp</a></li>
     </ul>
-    
-    <h4>Committee Stuff</h4>
+
+    <h4><i class="fa fa-clipboard" aria-hidden="true"></i> Committee Stuff</h4>
     <ul>
         <li><a href="forum/2"><font color="orange">Committee Forum</font></a></li>
         <li><a href="manage_members.php?action=show&show=committee">Committee details</a> </li>
         <li><a href="/page/numbers">Info - Minutes &amp; more </a></li>
     </ul>
-    
+
     <div>
-        <h4><a href="manage_members.php?action=show&show=all">Members Database</a></h4>
+        <h4><i class="fa fa-users" aria-hidden="true"></i> <a href="manage_members.php?action=show&show=all">Members Database</a></h4>
         <ul style="display:inline-block">
             <li><strong>Database</strong></li>
             <li><a href="manage_members.php?action=show&show=all">All Members</a></li>
@@ -65,16 +73,16 @@ addHeader();
             <li><a href="manage_members.php?action=Email&recipients=judges">Judges</a></li>
         </ul>
     </div>
-    
-    <h4>Msc</h4>
+
+    <h4><i class="fa fa-lightbulb-o" aria-hidden="true"></i> Msc</h4>
     <ul>
         <li><a href="forum_stats.php">Forum Stats - Public</a></li>
         <li><a href="forum_stats.php?forum=2">Forum Stats - Committee</a></li>
         <li><a href="page/getingearnewera">Get In Gear & New Era</a></li>
-        <li><a href="page/log" style="color:#6F0;">Ch-ch-ch-ch-Changes</a> </li>
+        <!-- <li><a href="page/log" style="color:#6F0;">Ch-ch-ch-ch-Changes</a> </li> -->
     </ul>
-    
-    <h4>Position Diary</h4>
+
+    <h4><i class="fa fa-book" aria-hidden="true"></i> Position Diary</h4>
     <ul>
         <li><a href="files/usefuldocs/Committee_Page_Instructions.doc" style="color:#FF8080;">Instructions</a></li>
         <?php
@@ -102,37 +110,40 @@ addHeader();
             display:none;
             margin-bottom: 1em;
         }
-    </style>    
-    <div>
+    </style>
+    <div id="forum-notice-me-please">
         <?php
             $noticeContent = mysqli_fetch_array(mysqli_query($db, "SELECT pagecontent FROM  pages WHERE pageurl='forumnotice' ORDER BY  id DESC LIMIT 1"))['pagecontent'];
             if ($noticeContent == '') $noticeContent = '<strong>Notice is not set. Hit edit</strong>';
         ?>
-        <h4>Forum Notice <small>(This works again)</small></h4>
+        <h4><i class="fa fa-thumb-tack" aria-hidden="true"></i> Forum Notice</h4>
         <div>Click the button to edit the forum notice. To turn it off, save the message as blank.</div>
-        
+
         <div class="notice-preview alert forum-notice" data-pageid="forumnotice"><?= $noticeContent ?></div>
         <textarea class="notice-textarea form-control"></textarea>
-        
+
         <div class="btn-edit-notice">
             <button class="btn btn-default js-edit-notice-start">Edit</button>
             <div class="btn-group js-edit-notice-running" style="display:none">
                 <button class="btn btn-default js-btn-cancel">Cancel</button>
                 <button class="btn btn-primary js-btn-save" style="margin-left: -1px;">Publish</button>
             </div>
+            <a href="https://ucdtramp.com/forum" class="btn btn-default">Go to Forum</a>
         </div>
     </div>
-    
+
 
 <?php
+
+// This stuff is broken
 //---------------------=----------------------------
-if ($userPosition == "Webmaster lol") {
+if ($userPosition == "Webmaster this should not be used cause it's weird...") {
     //Spying box showing peoples last login time
     echo '
     <li>
         <h4>Spying</h4>';
-    
-    $query = mysqli_query($db, "SELECT * FROM committee_users");
+
+    $query = mysqli_query($db, "SELECT * FROM committee_users ORDER BY `committee_users`.`thislogin` DESC");
     while ($row = mysqli_fetch_assoc($query)) {
         if ($row['cookie'] != 0) {
             echo "<span style='color:#65a830'>&#9679;</span> " . $row['user'] . " logged in " . nicetime($row['thislogin']) . ".<br>";
@@ -142,21 +153,8 @@ if ($userPosition == "Webmaster lol") {
         }
     }
     echo '</li>';
-    
-    // Shows bug reports
-    echo '
-    <li>
-        <h4>Bug Box Messages</h4>
-        Who What Where When<br>';
-    
-    $bug = mysqli_query($db, "SELECT * FROM Webmaster_reports ORDER BY id DESC");
-    while ($bugs = mysqli_fetch_array($bug)) {
-        echo '<strong>' . $bugs['name'] . '</strong> - ' . $bugs['message'] . '<br>';
-    }
-    echo '
-    </li>';  
 }
-?>   
+?>
 </ul>
 
 <?php
@@ -167,7 +165,7 @@ addFooter();
 var Notice = {
     editor : '',
     preview : '',
-    originalHTML: '', 
+    originalHTML: '',
     init : function() {
         // Save original HTML for cancel
         this.editor = $('.notice-textarea');
@@ -188,13 +186,34 @@ var Notice = {
         Notice.editor.html(Notice.originalHTML);
         Notice.startLiveUpdate();
 
+        // http://www.jacklmoore.com/autosize/
+        autosize.update(Notice.editor);
+
         // Change to action buttons
         Notice.toggleButtons();
+
+        // Register
+        window.onbeforeunload = Notice.confirmOnPageExit;
     },
     cancelHandler: function(){
         // Restore the original HTML
         Notice.preview.html(Notice.originalHTML);
         Notice.resetNotice();
+    },
+    confirmOnPageExit: function (e) {
+        // If we haven't been passed the event get the window.event
+        e = e || window.event;
+
+        var message = 'Wait! The forum notice editor is still open...';
+
+        // For IE6-8 and Firefox prior to version 4
+        if (e)
+        {
+            e.returnValue = message;
+        }
+
+        // For Chrome, Safari, IE8+ and Opera 12+
+        return message;
     },
     resetNotice: function(){
         // Remove editor from page and end sessions
@@ -202,6 +221,8 @@ var Notice = {
         Notice.editor.html('');
         // Change to edit page button
         Notice.toggleButtons();
+        // Remove
+        window.onbeforeunload = null;
     },
     toggleButtons: function(){
         $('.js-edit-notice-start').toggle();
@@ -248,5 +269,9 @@ var Notice = {
 };
 $(document).ready(function () {
     Notice.init();
+    <?php
+    if (isset($_GET['edit_forum_notice'])){
+        echo 'Notice.startHandler()';
+    }?>
 });
 </script>

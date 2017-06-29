@@ -1,0 +1,131 @@
+hr {
+    background-image: url('../../images/backgrounds/halloween/trampoline_divider.png');
+}
+
+/*mobile*/
+.header-logo {
+    background-image: url('../../images/backgrounds/halloween/mheader.jpg');
+}
+.background-sides {
+    background-image: url('../../images/backgrounds/halloween/msidestop.png'),
+    url('../../images/backgrounds/halloween/msidesrepeat.png');
+}
+
+
+/*desktop*/
+@media (min-width: 768px) {
+	.header-logo {
+	    background-image: url('../../images/backgrounds/halloween/header.jpg');
+	}
+	/***********************************************************
+	                           BACKGROUNDS
+	***********************************************************/
+	.background-sides {
+	    /*background: url('../../images/backgrounds/halloween/sidestop.png') 0 0/100% no-repeat,*/
+	    /*url('../../images/backgrounds/halloween/sidesrepeat.png') 0 0/100% repeat-y;*/
+	    background-image: url('../../images/backgrounds/halloween/sidestop.png'), url('../../images/backgrounds/halloween/sidesrepeat.png');
+	}
+}
+
+/*general*/
+.navbar-yellow {
+	/* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#FF6819+0#FF6819+0,FF6819+100 */
+	background: #FF6819; /* Old browsers */
+	background: -moz-linear-gradient(top,  #FF6819 0%, #FF6819 0%, #FF6819 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#FF6819), color-stop(0%,#FF6819), color-stop(100%,#FF6819)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #FF6819 0%,#FF6819 0%,#FF6819 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #FF6819 0%,#FF6819 0%,#FF6819 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #FF6819 0%,#FF6819 0%,#FF6819 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #FF6819 0%,#FF6819 0%,#FF6819 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF6819', endColorstr='#FF6819',GradientType=0 ); /* IE6-9 */
+}
+.header-logo {
+	position: relative;
+}
+.header-logo img {
+    width: 20%;
+    position: absolute;
+	top: 25%;
+	left: 40%;
+    animation: wander 15s ease-in-out infinite ;
+}
+@keyframes wander {
+	0% {
+		transform: translateX(200%) scaleX(1);
+	}
+	50% {
+        transform: translateX(-200%) scaleX(1);
+	}
+	50.2% {
+        transform: translateX(-200%) scaleX(-1);
+	}
+	100% {
+        transform: translateX(200%) scaleX(-1);
+	}
+}
+
+.girl {
+	display: none;
+    position: fixed;
+    width: 60%;
+	z-index: 2;
+    right: 20%;
+    top: 10%;
+}
+
+/*bootstrap stuff*/
+.form-control:focus {
+	border-color: #FF6819;
+}
+.form-control {
+	border-color: black;
+}
+
+.btn-default {
+    color: white;
+    background-color: black;
+    border-color: #FF6819;
+}
+.btn-default.active, .btn-default.focus, .btn-default:active, .btn-default:focus, .btn-default:hover, .open>.dropdown-toggle.btn-default {
+    color: white;
+    background-color: black;
+    border-color: #FF6819;
+}
+
+.btn-primary, .btn-primary.disabled, .btn-primary.disabled.active, .btn-primary.disabled.focus, .btn-primary.disabled:active, .btn-primary.disabled:focus, .btn-primary.disabled:hover, .btn-primary[disabled], .btn-primary[disabled].active, .btn-primary[disabled].focus, .btn-primary[disabled]:active, .btn-primary[disabled]:focus, .btn-primary[disabled]:hover, fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary.active, fieldset[disabled] .btn-primary.focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:hover {
+    background-color: #FF6819;
+    border-color: orangered;
+}
+.btn-primary.active, .btn-primary.focus, .btn-primary:active, .btn-primary:focus, .btn-primary:hover, .open>.dropdown-toggle.btn-primary {
+	color: #fff;
+    background-color: orangered;
+	border-color: #FF6819;
+}
+
+.pagination>li>a, .pagination>li>span {
+    background-color: #fff;
+    color: #FF6819;
+}
+.pagination>li>a:focus, .pagination>li>a:hover, .pagination>li>span:focus, .pagination>li>span:hover {
+    color: white;
+    background-color: black;
+    border-color: #FF6819;
+}
+.pagination>.active>a, .pagination>.active>a:focus, .pagination>.active>a:hover, .pagination>.active>span, .pagination>.active>span:focus, .pagination>.active>span:hover {
+    color: #fff;
+    background-color: black;
+    border-color: #FF6819;
+}
+/*website stuff*/
+.news-item__heading {
+    border-bottom: 2px solid #FF6819;
+}
+.post-header {
+    border-bottom: 2px solid orange;
+}
+a, .btn-link {
+	color: orange;
+}
+a:focus, a:hover, .btn-link:focus, .btn-link:hover {
+    color: orangered;
+}

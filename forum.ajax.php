@@ -22,7 +22,7 @@ if ($_POST['action'] == 'checkForNewPost'){
         $errorData = mysqli_error($db).' Query: '.$newPostCheckSQL;
         returnJSON('error', $errorData);
     }
-    
+
     if (mysqli_num_rows($newPostsResult) > 0){
         // Send post json obj down
         $posts2send = posts2send($newPostsResult);
@@ -51,7 +51,7 @@ else if ($_POST['action'] == 'newPost'){
         $errorData = mysqli_error($db).' Query: '.$addPostSQL;
         returnJSON('error', $errorData);
     }
-    
+
     // Get id of the post from the db
     $newPostId = mysqli_insert_id($db);
     // Get the whole post
@@ -68,7 +68,7 @@ else if ($_POST['action'] == 'newPost'){
     // if ($forumId == 1)
         // notificationEveryone();
 
-    
+
     // $postAssocArray = mysql2AssocArray(mysqli_fetch_array($newPostResult), MYSQLI_ASSOC); // Get post just submitted in all it's properly formatted glory
     // Send email
     // $emailId = ($postAssocArray['parentPostId'] == 0)? $postAssocArray['id'] : $postAssocArray['parentPostId'];
@@ -100,7 +100,7 @@ else if ($_POST['action'] == 'editPost'){
         $errorData = mysqli_error($db);
         returnJSON('error', $errorData);
     }
-    
+
     header("Location: forum/".$forumId."#".$postId);
 }
 /*
@@ -205,7 +205,7 @@ function emailPost($emailId, $forumUser, $forumMessage){
     switch ($forumId) {
         case 0:
             $to = ""; //$to      = 'psdcon@gmail.com';
-            $subject = 'UCDTC Deleted Forum Post';  
+            $subject = 'UCDTC Deleted Forum Post';
             break;
         case 1:
             $to = ""; //$to      = 'psdcon@gmail.com';
@@ -218,7 +218,7 @@ function emailPost($emailId, $forumUser, $forumMessage){
             if ($forumUser == 'Paul')
                 return;
             $to      = 'psdcon@gmail.com';
-            $subject = 'UCDTC 404 Forum Post';  
+            $subject = 'UCDTC 404 Forum Post';
             break;
         default:
             # code...
@@ -233,7 +233,7 @@ function emailPost($emailId, $forumUser, $forumMessage){
             <head><title>Forum Post</title></head>
             <body>
                 <p>
-                    <strong>'. $forumUser .'</strong>: 
+                    <strong>'. $forumUser .'</strong>:
                     '. $forumMessage .'
                 </p>
                 <br>

@@ -57,7 +57,7 @@ if (isset($_GET['delete'])) {
 }
 
 // Check if an auto generated message should be added to public forum
-$autoGenTimer = time() - 60*60*24; // time since epoch 24 hours ago
+$autoGenTimer = time() - 60*60*24; // the time 24 hours ago in seconds
 $autoGenLastPost = mysqli_fetch_array(mysqli_query($db, "SELECT post_time FROM forum_posts WHERE forum = 1 ORDER BY id DESC LIMIT 1"), MYSQLI_ASSOC);
 
 // If the time of the last post was more than 24 hours ago, add auto gen'd post
@@ -65,14 +65,12 @@ if ($autoGenTimer > $autoGenLastPost['post_time'] && $forumId == 1) {
     // Get a random photo from the punishment photos
     // This doesn't work any more $randomIdSQL = "SELECT FLOOR( MAX(id) * RAND()) FROM `photo_punishment` WHERE `used` < 2 AND `id` > 364"; // Gets max id from photos in that event, multiplies it by rand() number between 0 and 1, floor() rounds down to an int
     // $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 2  AND `id` >= ($randomIdSQL) ORDER BY `id` LIMIT 1";
-    $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 1 AND `id` > 365 ORDER BY `id` LIMIT 1";
+    $punishmentSQL = "SELECT id,img FROM `photo_punishment` WHERE `used` < 2 AND `id` > 0 ORDER BY `id` LIMIT 1";
     $punishmentPhoto = mysqli_fetch_array(mysqli_query($db, $punishmentSQL), MYSQLI_ASSOC);
     $autoMessage = "
         ************************** AUTOMATICALLY GENERATED MESSAGE **************************
-
-        It's been 24 hours again. Here's a photo you've actually never seen before ;)...
-
-        https://ucdtramp.com/images/punishment_photos/".$punishmentPhoto['img'];
+        It's been 24 hours again. Here's a photo you've never seen before.
+		https://ucdtramp.com/images/punishment_photos/".$punishmentPhoto['img'];
 
     // Update the used count of this photo
     mysqli_query($db, "UPDATE `photo_punishment` SET `used` = `used`+1 WHERE `id`=".$punishmentPhoto['id']);
@@ -118,29 +116,27 @@ addHeader();
 
 <div class="forum-header">
     <?php
-    if ($forumId == '404') {
-        echo'
-            <div class="forum-header-404">
-                <h1>Welcome to the 404rum</h1>
-                <p>This is a place where you can make a website suggestion or correction and it goes straight to the webmaster. It\'s purple so you know it\'s not the regular forum. The music that you might be hearing, I cant get it out of my head, now it\'s in yours too.</p>
-                <audio style="max-width:100%;" src="//ucdtramp.com/files/happy_hogwarts.mp3" loop autoplay controls></audio>
-            </div>
-            <style>
-                .post-header {
-                    border-bottom-color: purple;
-                }
-            </style>
-            ';
-    }
-    else if ($forumId == '1') {
-        // Check for a forum notice set in the committee section
+    if ($forumId == '1') {
+        // Check for a forum notice set in the comittee section
         $noticeContents = mysqli_fetch_array(mysqli_query($db, "SELECT pagecontent FROM pages WHERE pageurl='forumnotice'"))['pagecontent'];
         if ($noticeContents != '') {
+            if ($loggedIn) {
+                $noticeContents .= '<a href="https://ucdtramp.com/committee?edit_forum_notice=true#forum-notice-me-please" class="pull-right">Edit</a>';
+            }
             echo '
                 <div class="alert forum-notice" title="Notice!">'.
                     $noticeContents.'
-                </div>';
+                </div>
+                <audio id="yeah" src="files/sounds/yeah.mp3"></audio>
+                <script>
+                    function playSound(){
+                        document.getElementById("yeah").load();
+                        document.getElementById("yeah").play();
+                    }
+                </script>
+                ';
         }
+
         // Check for a poll made in the last 3 days
         $poll = mysqli_fetch_array(mysqli_query($db, "SELECT `id`,`created`,`question` FROM `polls` WHERE `show_on_forum` = 1 ORDER BY `polls`.`id` DESC LIMIT 1 "), MYSQL_ASSOC);
         // Set time to that day to, 00h:00m, first thing in the morning so that the poll will disappear at midnight
@@ -163,12 +159,31 @@ addHeader();
                 </div>';
         }
     }
+    else if ($forumId == '404') {
+        echo'
+            <div class="forum-header-404">
+                <h1>The 404rum</h1>
+                <p>Something wrong with the website? Make a suggestion or correction and it goes straight to the webmaster.</p>
+                <p>The music that you might be hearing, I cant get it out of my head, now it\'s in yours too.</p>
+                <audio style="max-width:100%;" src="//ucdtramp.com/files/ZeldaTP_Menu_Select_Screen.mp3" loop autoplay controls></audio>
+            </div>
+            <style>
+                .post-header {
+                    border-bottom-color: #BA55D3;
+                }
+                .btn-primary, .btn-primary[disabled] {
+                    background-color: #6c33b7;
+                    border-color: #48168a;
+                }
+            </style>
+            ';
+    }
     // used on commapps.php page to show how many posts user hasn't seen
     else if ($forumId == '2') {
         mysqli_query($db, "UPDATE committee_users SET commforum='".time()."' WHERE user='".$_COOKIE["user"]."'");
     }
 
-    // Bug image that link to 404 forum
+    // Bug image that links to 404 forum
     if ($forumId != '404') {
         echo '
         <a class="bug-404 animated fadeIn" href="forum/404" title="404 Forum">
@@ -208,7 +223,7 @@ addHeader();
     </div>
 </form>
 
-<!-- Dropdowns for emoji, file uploader (not implemented) and help-->
+<!-- Dropdowns for emoji, file uploader (not implemented (yet?)) and help-->
 <div class="row">
     <div class="col-xs-12 well collapse" id="emoji-picker">
         <?php include 'templates/emoji_picker.php'; ?>
@@ -275,6 +290,27 @@ addHeader();
     </div>
 </div>
 
+<?php
+    // Helping out Rosie
+
+    // Days since last auto forum post
+    $lastAutoGendPostTimestamp = mysqli_fetch_array(mysqli_query($db, "SELECT post_time FROM forum_posts WHERE users_forum_id = '0' ORDER BY id DESC LIMIT 1"), MYSQLI_ASSOC);
+    $secsSinceLastAutoGendPost = time() - $lastAutoGendPostTimestamp['post_time'];
+    $daysSinceLastAutoGendPost = floor($secsSinceLastAutoGendPost/86400);
+    echo "<span title='This doesn\'t auto update, sorry.'>It's been ".$daysSinceLastAutoGendPost." days since the last automatic forum message. There's ";
+
+    // Time to live
+    $secsSinceLastAutoGendPost = $autoGenLastPost['post_time'] - time();
+    $daysSinceLastAutoGendPost = floor($secsSinceLastAutoGendPost/86400);
+    $hours = floor(($secsSinceLastAutoGendPost-$daysSinceLastAutoGendPost*86400)/(60 * 60));
+    $min = floor(($secsSinceLastAutoGendPost-($daysSinceLastAutoGendPost*86400+$hours*3600))/60);
+    $second = $secsSinceLastAutoGendPost - ($daysSinceLastAutoGendPost*86400+$hours*3600+$min*60);
+
+    if($hours > 0) echo $hours." hours ";
+    echo $min." minutes to post or it will reset to 0.</span>";
+
+?>
+
 <hr>
 
 <div class="new-post-notification animated"><!-- 'Scroll to' posts appear in here --></div>
@@ -298,7 +334,11 @@ addHeader();
         }
 
         // Print a forum post and all its replies
+        //<p style="cursor:pointer;" onclick="$(this).next().slideToggle()">'[-]'</p>
+        //<p style="cursor:pointer;" onclick="$(this).next().slideToggle()">click</p>
+        //<div class="row" id="posts-container" style="overflow: hidden; display: block;">
         echo parentPost2HTML($post['id'], $postHtml, $repliesHtml);
+        
     }
     ?>
 </div> <!-- .row #posts-container -->
@@ -383,3 +423,14 @@ addFooter();
 <script src="js/libs/emojione.js"></script>
 <!-- Puts the images into the page -->
 <script src="js/emoji.js"></script>
+<script type="text/javascript">
+if ( window.addEventListener ) {
+  var state = 0, konami = [38,38,40,40,37,39,37,39,66,65];
+  window.addEventListener("keydown", function(e) {
+    if ( e.keyCode == konami[state] ) state++;
+    else state = 0;
+    if ( state == 10 )
+      window.location = "https://ucdtramp.com/findwaynegame/finddwayne.html";  //you can write your own code here
+    }, true);
+}
+</script>

@@ -93,27 +93,28 @@ addHeader();
         <p>At  some stage in these nights, you might see handstands, back-flip races and human  pyramids. Also possibly an ambulance.</p>
 
 
-        <strong><u>WEEKENDS AWAY...</u></strong> <br>
-        <strong><em>Cavan</em></strong>
-    </div>
-    <div class="col-xs-12 col-md-4">
-        <p>
-            <img class="revealOnScroll" data-animation="fadeInLeft" style="width:100%;" src="//ucdtramp.com/photos/cavan1213/Cavan%2012%20185.JPG">
-        </p>
-    </div>
-    <div class="col-xs-12 col-md-8">
-        <p>
-            Again we meet up with Trinity DCU and Maynooth, pile onto buses and set sail  for the distant land of&nbsp;<strong>CAVAN</strong>&nbsp;and its green, green hills of indiscretion. We rent out a big sports centre in the middle of nowhere, unload  4 trampolines, air track, trampette, copious amounts of food and drink and  ourselves for 3 days and basically bounce and party. Visits to the pumpkin  festival are also common whilst there. It has to be seen to be believed! Known  as our 'Intensive Training Weekend', this is the highlight of many a tramps  year. Whether you take it as an intensive training for your trampolining skills  or liver... the choice is yours. Make sure you sign up!
-        </p>
 
 
-    </div>
-    <div class="col-xs-12 col-md-12">
-        <strong><em>Competition Weekends</em></strong>
-    </div>
-    <div class="col-xs-12 col-md-push-8 col-md-4">
-        <p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <a href="https://ucdtramp.com/page/whenigrowupiwanttobeaGALLIGAN">
             <img class="revealOnScroll" data-animation="fadeInRight" style="width:100%" src="//ucdtramp.com/photos/isto1213p2/ISTO_13_188.JPG">
+            </a>
         </p>
     </div>
     <div class="col-xs-12 col-md-pull-4 col-md-8">

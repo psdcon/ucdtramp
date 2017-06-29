@@ -25,7 +25,7 @@ if (!isset($_REQUEST['eventname'])) {
         </div>
 
         <div class="gallery-grid flex-container">';
-        // Show each event in the year          
+        // Show each event in the year
         $eventsQuery = mysqli_query($db, "SELECT * FROM photo_events where category='".$year['id']."' ORDER BY id DESC");
         while ($event = mysqli_fetch_array($eventsQuery, MYSQL_ASSOC)) {
             $albumComments = mysqli_query($db, "SELECT * FROM photo_comments WHERE event='".$event['filename']."'");
@@ -39,7 +39,7 @@ if (!isset($_REQUEST['eventname'])) {
             $thumbnailSrcset = "//ucdtramp.com/photos/$eventFolder/preview/{$eventFolder}x200.jpg 200w,
                                 //ucdtramp.com/photos/$eventFolder/preview/{$eventFolder}x400.jpg 400w,
                                 //ucdtramp.com/photos/$eventFolder/preview/{$eventFolder}x800.jpg 800w";
-            echo ' 
+            echo '
             <a class="gallery-grid-item" href="'.$eventLink.'" title="'.$eventName.'">
                 <img class="gallery-grid-item__thumb" srcset="'.$thumbnailSrcset.'" src="'.$thumbnailSrc.'" alt="'.$eventFolder.' thumbnail">
                 <div class="gallery-grid-item__caption">'.
@@ -54,7 +54,7 @@ if (!isset($_REQUEST['eventname'])) {
     }
 
     addFooter();
-} 
+}
 
 
 
@@ -67,7 +67,7 @@ else if (isset($_REQUEST['eventname'])) {
     $photos = mysqli_query($db, "SELECT * FROM photos WHERE event='$eventID'");
     $photoCount = mysqli_num_rows($photos);
 
-    // Comment forum stuff
+    // Comment form stuff
     $username = '';
     if (isset($_COOKIE['user'])) {
         $username = $_COOKIE['user'];
@@ -76,7 +76,7 @@ else if (isset($_REQUEST['eventname'])) {
     }
 ?>
     <!--Album Heading with date and num of images-->
-    <h1 class="event-title"><?= htmlentities($event["name"]) ?></h1>    
+    <h1 class="event-title"><?= htmlentities($event["name"]) ?></h1>
     <p class="event-info clearfix">
         Created on: <?= date('F Y', $event['created']); ?><br>
         Number of images: <?= $photoCount ?>
@@ -88,8 +88,8 @@ else if (isset($_REQUEST['eventname'])) {
     </p>
     <hr>
     <a href="https://youtu.be/OuipLscRGN0"></a>
-    
-    <!--Comment pannel is hidden until a fancybox opens--> 
+
+    <!--Comment panel is hidden until a fancybox opens-->
     <div class="comments-pannel">
         <form class="form-horizontal comment-form" onsubmit="return false;">
             <div class="form-group row comment-form-inputs">
@@ -106,7 +106,7 @@ else if (isset($_REQUEST['eventname'])) {
                 <div class="col-xs-12 comment-error"></div>
                 <div class="col-xs-12">
                     <button type="submit" class="form-control btn btn-primary btn-comment">Post</button>
-                    <button type="button" class="form-control btn btn-default btn-showHide-form">Write Comment</button>                    
+                    <button type="button" class="form-control btn btn-default btn-showHide-form">Write Comment</button>
                 </div>
             </div>
         </form>
@@ -119,10 +119,10 @@ else if (isset($_REQUEST['eventname'])) {
         <div class="comments-container"></div>
     </div>
 
-    <!--Show all images in a flexible contrainer so spacing between photos is even-->
+    <!--Show all images in a flexible container so spacing between photos is even-->
     <div class="flex-container">
 <?php
-    
+
     $eventFolder = rawurlencode(htmlentities($event['filename']));
     while ($photo = mysqli_fetch_array($photos, MYSQL_ASSOC)) {
         $commentsCount = mysqli_fetch_array(mysqli_query($db, "SELECT count(1) AS c FROM photo_comments WHERE photoid='".$photo['id']."' AND event='".$_REQUEST['eventname']."'"))['c'];
@@ -148,7 +148,7 @@ else if (isset($_REQUEST['eventname'])) {
 
     <?php
     // If GET image is set, load that image
-    if (isset($_GET['image'])) { 
+    if (isset($_GET['image'])) {
         echo '
         <script>
             $( document ).ready(function() {
@@ -169,7 +169,7 @@ else if (isset($_REQUEST['eventname'])) {
 
     /*desktop*/
     @media (min-width: 768px) {
-        
+
         #swipebox-container {
             width: 80%;
             height: 100%;
