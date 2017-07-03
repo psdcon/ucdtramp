@@ -886,6 +886,13 @@ textarea {
         background-color: transparent;
     }
 } */
+.forum-pagination {
+    overflow: auto;
+    white-space: nowrap;
+}
+.forum-pagination li {
+    display: inline-block;
+}
 /***********************************************************
                            GALLERY GRID
 ***********************************************************/

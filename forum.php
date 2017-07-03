@@ -338,7 +338,7 @@ addHeader();
         //<p style="cursor:pointer;" onclick="$(this).next().slideToggle()">click</p>
         //<div class="row" id="posts-container" style="overflow: hidden; display: block;">
         echo parentPost2HTML($post['id'], $postHtml, $repliesHtml);
-        
+
     }
     ?>
 </div> <!-- .row #posts-container -->
@@ -363,7 +363,7 @@ for ($i = 1; $i < $num_pages+1; $i++) {
 <div class="row">
     <div class="col-xs-12" id="jump_page">
         <span>Jump to a page:</span>
-        <nav>
+        <nav class="forum-pagination">
           <ul class="pagination">
             <?php
                 if ($paginationPage == 1){
